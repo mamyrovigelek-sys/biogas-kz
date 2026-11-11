@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Биогаз в сельских районах Казахстана</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#26302A; --surface:#2F3A33; --surface2:#384539; --ink:#ECEFE7; --muted:#A9B4AA; --line:#46534A;
+  --land:#3A463F; --r0:#4C4F38; --r1:#A68F49; --r2:#F2D88E; --flame:#8EB2FF; --flame-ink:#0E1626; --flame-soft:#2E3A55;
+  --c1:#57583B; --c2:#7B7240; --c3:#A28E48; --c4:#CBAD5A; --c5:#F2D88E;
+  --water:#2A4552; --water-ink:#A6C8D6; --nbr:#36433B; --nbr-line:#4D5A51; --nbr-ink:#9AA59C;
+  --bar-bg:rgba(38,48,42,.88); --barh:60px; --navh:0px;
+  --c-manure:#C0955A; --c-gas:#8EB2FF; --c-power:#F5C542; --c-heat:#F08A5D; --c-digest:#8FCB7E;
+  --ok:#7FCB8A; --warn:#F5C542; --bad:#F2856F;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --text:"Golos Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#181E1A; --surface:#212923; --surface2:#2A332D; --ink:#E6EAE2; --muted:#9AA59C; --line:#333E37;
+    --land:#2C3630; --r0:#3D3F2D; --r1:#8F7B3E; --r2:#E6CB7E; --flame:#86AAFF; --flame-soft:#25304A;
+    --c1:#46482F; --c2:#6B6339; --c3:#93803F; --c4:#C1A252; --c5:#EBCF80;
+    --water:#1D3440; --water-ink:#8FB3C3; --nbr:#262F29; --nbr-line:#38443C; --nbr-ink:#86918A;
+    --bar-bg:rgba(24,30,26,.88);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181E1A; --surface:#212923; --surface2:#2A332D; --ink:#E6EAE2; --muted:#9AA59C; --line:#333E37;
+  --land:#2C3630; --r0:#3D3F2D; --r1:#8F7B3E; --r2:#E6CB7E; --flame:#86AAFF; --flame-soft:#25304A;
+    --c1:#46482F; --c2:#6B6339; --c3:#93803F; --c4:#C1A252; --c5:#EBCF80;
+    --water:#1D3440; --water-ink:#8FB3C3; --nbr:#262F29; --nbr-line:#38443C; --nbr-ink:#86918A;
+    --bar-bg:rgba(24,30,26,.88);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(var(--barh) + env(safe-area-inset-top,0px));height:100%}
+body{margin:0;min-height:100%;padding-top:var(--barh);padding-bottom:var(--navh);background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--text);-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;letter-spacing:-.01em}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--flame);outline-offset:2px}
+
+/* ===== stage: the map is the page ===== */
+.stage{min-height:calc(100dvh - var(--barh) - var(--navh) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr auto;gap:0 24px;padding:clamp(16px,2.4vw,32px)}
+@media (min-width:1100px){.stage{grid-template-columns:1fr 370px;grid-template-rows:auto 1fr auto}}
+.head{grid-column:1}
+.head h1{font-size:clamp(1.1rem,.8rem + 1.2vw,1.65rem);line-height:1.18;font-weight:700;max-width:34ch}
+.head p{margin:.45rem 0 0;color:var(--muted);font-size:.92rem;max-width:60ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 13px;font-size:.87rem;cursor:pointer;color:var(--ink)}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.mapbox{grid-column:1;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 0}
+svg.map{display:block;width:100%;height:auto;max-height:calc(100dvh - 280px);touch-action:manipulation}
+@media (max-width:1099px){svg.map{max-height:none}}
+.ctx .water{fill:var(--water)}
+.ctx .nbr{fill:var(--nbr);stroke:var(--nbr-line);stroke-width:1;stroke-linejoin:round}
+.lakes path{fill:var(--water)}
+.ctxl text{font:500 12px var(--text);fill:var(--nbr-ink);text-anchor:middle;letter-spacing:.04em}
+.ctxl text.w{fill:var(--water-ink);font-style:italic;letter-spacing:.02em}
+.lakes .ctxl text{paint-order:stroke;stroke:var(--water);stroke-width:3px}
+.lbl.city-l{text-anchor:start;font-size:11.5px;font-weight:600}
+@media (max-width:640px){.ctxl text{font-size:20px}.ctxl text.w.small{display:none}}
+.reg{stroke:var(--bg);stroke-width:1.2;cursor:pointer;transition:fill .35s,transform .25s,filter .25s;transform-box:fill-box;transform-origin:center}
+.reg:hover{filter:brightness(1.12)}
+.reg:focus{outline:none}
+.reg:focus-visible,.reg.sel{stroke:var(--flame);stroke-width:3}
+.reg.sel{transform:translateY(-4px);filter:drop-shadow(0 7px 7px rgba(0,0,0,.55)) brightness(1.08)}
+.lbl{font:500 12.5px var(--text);fill:var(--ink);pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3.4px;stroke-linejoin:round;text-anchor:middle}
+.lbl.v{font-weight:600;font-size:12px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.lbl{display:none}}
+.city{fill:var(--ink);stroke:var(--bg);stroke-width:2;cursor:pointer}
+.city:focus-visible,.city.sel{fill:var(--flame)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:8px;font-size:.84rem;line-height:1.3;white-space:nowrap;transform:translate(-50%,calc(-100% - 12px));opacity:0;transition:opacity .12s;z-index:2}
+.tip.on{opacity:1}
+.legend{grid-column:1;display:flex;align-items:center;gap:8px 16px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
+.lsc{display:flex;flex-wrap:wrap;gap:4px 12px}
+.lsc span{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.lsc i{width:14px;height:14px;border-radius:4px;display:inline-block}
+.legend .src{margin-left:auto}
+
+/* ===== region card ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:18px}
+@media (min-width:1100px){.card{grid-column:2;grid-row:1 / span 3;align-self:center;margin-top:56px}}
+.card h2{font-size:1.2rem;line-height:1.2}
+.card .meta{color:var(--muted);font-size:.86rem;margin:4px 0 14px}
+.stock{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.stock li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;font-size:.93rem}
+.stock .n{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.stock .bar{grid-column:1 / -1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.stock .bar i{display:block;height:100%;background:var(--c-manure);border-radius:4px;transition:width .35s}
+.stock .sh{grid-column:1 / -1;color:var(--muted);font-size:.76rem;line-height:1.2}
+.pot{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.pot .lab{color:var(--muted);font-size:.85rem}
+.pot .big{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin:2px 0 4px}
+.pot .big strong{font-family:var(--display);font-weight:700;font-size:1.7rem;color:var(--flame);line-height:1.1;font-variant-numeric:tabular-nums}
+.pot .big span{color:var(--muted);font-size:.88rem}
+.pot .line{font-size:.88rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:0 5px}
+.pot .line .dot{margin-right:3px}
+.pot .line b{color:var(--ink);font-weight:600}
+.btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 15px;cursor:pointer;font-size:.88rem;color:var(--ink)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--flame);border-color:var(--flame);color:var(--flame-ink);font-weight:500}
+.card .btn{margin-top:14px;width:100%}
+
+/* ===== top bar and navigation ===== */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:50;padding-top:env(safe-area-inset-top,0px);background:var(--bar-bg);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topin{height:var(--barh);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 calc(clamp(16px,2.4vw,32px) + env(safe-area-inset-right,0px)) 0 calc(clamp(16px,2.4vw,32px) + env(safe-area-inset-left,0px))}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font-family:var(--display);font-weight:500;font-size:.95rem;white-space:nowrap;min-width:0}
+.brand b{font-weight:500;color:var(--muted)}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--flame);display:grid;place-items:center;flex:none}
+.logo svg{width:20px;height:20px}
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tab{display:flex;align-items:center;gap:8px;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:7px 15px;font-size:.9rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
+.tab svg{width:18px;height:18px;flex:none}
+.tab:hover{color:var(--ink)}
+.tab[aria-pressed="true"]{background:var(--flame);color:var(--flame-ink)}
+.tab .ts{display:none}
+@media (max-width:1060px){.brand b{display:none}}
+@media (max-width:820px){.tab{padding:7px 11px}.tab svg{display:none}}
+@media (max-width:700px){
+  :root{--barh:52px;--navh:calc(62px + env(safe-area-inset-bottom,0px))}
+  .topbar{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
+  .brand{font-size:.9rem}.brand b{display:inline}
+  .tabs{position:fixed;left:0;right:0;bottom:0;border:0;border-top:1px solid var(--line);border-radius:0;background:var(--bar-bg);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);padding:6px calc(6px + env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) calc(6px + env(safe-area-inset-left,0px));justify-content:space-around}
+  .tab{flex:1;flex-direction:column;gap:3px;padding:6px 2px;font-size:.7rem;border-radius:12px}
+  .tab svg{display:block;width:21px;height:21px}
+  .tab .tl{display:none}.tab .ts{display:inline}
+  .tab[aria-pressed="true"]{background:var(--flame-soft);color:var(--flame)}
+}
+@media (max-width:380px){.brand b{display:none}}
+.drawer.wide{width:min(900px,100%)}
+.drawer .chart{margin-top:4px}
+.how-fab{top:calc(148px + env(safe-area-inset-top,0px))}
+.ill-wrap{background:#1D2520;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ill{display:block;width:100%;height:auto}
+.ill .it{font:500 13px var(--text);fill:#E6EAE2;paint-order:stroke;stroke:#1D2520;stroke-width:3px;stroke-linejoin:round}
+.ill .it.soft{fill:#E2D6B8;font-size:12px}
+.ill .it.heat{fill:#F5A27A}
+.flow{fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:.32;transition:opacity .25s}
+.flow.manure{stroke:#C0955A}.flow.gas{stroke:#8EB2FF}.flow.power{stroke:#F5C542}.flow.heat{stroke:#F08A5D}.flow.digest{stroke:#8FCB7E}
+.pt{transition:opacity .25s}.pt.manure{fill:#D7A866}.pt.gas{fill:#A9C4FF}.pt.power{fill:#FFD95A}.pt.heat{fill:#FF9C6E}.pt.digest{fill:#9EDB8C}
+.bubbles circle{fill:#B9CCFF;animation:rise var(--d,2.6s) ease-in infinite;animation-delay:var(--dl,0s)}
+@keyframes rise{0%{transform:translate(0,0);opacity:0}12%{opacity:.95}50%{transform:translate(3px,-40px)}88%{opacity:.8}100%{transform:translate(-2px,-84px);opacity:0}}
+.mixer .pa,.mixer .pb{transform-box:fill-box;transform-origin:center;animation:paddle 1.6s linear infinite}
+.mixer .pb{animation-delay:-.8s}
+@keyframes paddle{0%{transform:scaleX(1)}25%{transform:scaleX(.08)}50%{transform:scaleX(1)}75%{transform:scaleX(.08)}100%{transform:scaleX(1)}}
+.coil{animation:coil 2.2s ease-in-out infinite alternate}
+@keyframes coil{from{stroke-opacity:.45}to{stroke-opacity:1}}
+.gh{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1,.9)}50%{transform:scale(1.02,1.04)}}
+.rotor{transform-box:fill-box;transform-origin:center;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bolt{animation:bolt 1.4s steps(1) infinite}
+@keyframes bolt{0%,60%,100%{opacity:1}65%,72%{opacity:.25}}
+.smoke circle{fill:#B8BEC0;transform-box:fill-box;transform-origin:center;animation:puff 3s ease-out infinite}
+.smoke circle:nth-child(2){animation-delay:-1s}.smoke circle:nth-child(3){animation-delay:-2s}
+@keyframes puff{0%{transform:translate(0,0) scale(.6);opacity:.55}100%{transform:translate(12px,-46px) scale(2.2);opacity:0}}
+.stepbar{margin:12px 0 0;display:flex;gap:8px;align-items:center}
+.stepinfo .prog{display:block;height:3px;border-radius:2px;background:var(--flame);margin-top:10px;width:0}
+.stepinfo .prog.run{animation:prog 4.5s linear forwards}
+@keyframes prog{to{width:100%}}
+.v3d-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.v3d{position:relative;height:clamp(320px,56vh,540px);background:#2A3640;touch-action:none;user-select:none}
+.v3d canvas{display:block;width:100%;height:100%;cursor:grab}
+.v3d canvas:active{cursor:grabbing}
+.v3d-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.v3d-labels span{position:absolute;transform:translate(-50%,-100%);font:600 12px var(--text);color:#EEF1EA;background:rgba(18,24,20,.72);padding:2px 8px;border-radius:6px;white-space:nowrap}
+.v3d-hint{position:absolute;left:12px;bottom:10px;margin:0;font-size:.8rem;color:#C9D0C6;background:rgba(18,24,20,.6);padding:4px 10px;border-radius:6px;transition:opacity .4s;pointer-events:none}
+.v3d-hint.off{opacity:0}
+.v3d-fallback{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:24px;text-align:center;color:var(--muted)}
+.v3d-fallback[hidden]{display:none}
+.st{transition:opacity .25s}
+#proc[data-step] .st{opacity:.16}
+#proc[data-step="1"] .s1,#proc[data-step="2"] .s2,#proc[data-step="3"] .s3,#proc[data-step="4"] .s4,#proc[data-step="5"] .s5,#proc[data-step="6"] .s6{opacity:1}
+.badges g{cursor:pointer}
+.badges circle{fill:var(--flame);stroke:#1D2520;stroke-width:2}
+.badges text{fill:var(--flame-ink);font:700 13px var(--text);text-anchor:middle;pointer-events:none}
+#proc[data-step="1"] [data-s="1"] circle,#proc[data-step="2"] [data-s="2"] circle,#proc[data-step="3"] [data-s="3"] circle,#proc[data-step="4"] [data-s="4"] circle,#proc[data-step="5"] [data-s="5"] circle,#proc[data-step="6"] [data-s="6"] circle{fill:#FFFFFF}
+.steps{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.steps button{width:100%;display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:transparent;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--ink);font-size:.9rem}
+.steps button:hover{border-color:var(--muted)}
+.steps button b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:.8rem;flex:none}
+.steps button[aria-pressed="true"]{border-color:var(--flame);background:var(--flame-soft)}
+.steps button[aria-pressed="true"] b{background:var(--flame);color:var(--flame-ink)}
+.stepinfo{margin:10px 0 0;background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:.92rem;line-height:1.5}
+.stepinfo strong{display:block;margin-bottom:2px}
+.sec{font-size:1.05rem;margin:30px 0 6px}
+.flowchips{margin:0 0 12px}
+.flowchips .chip{display:inline-flex;align-items:center;gap:7px}
+.flowchips .chip i{width:14px;height:4px;border-radius:2px;display:inline-block}
+.vnote{color:var(--muted);font-size:.86rem;margin:12px 0 8px}
+.vstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:0 0 14px}
+.vstats div{background:var(--surface2);border-radius:10px;padding:10px 12px}
+.vstats b{display:block;font-family:var(--display);font-weight:500;font-size:1.1rem;color:var(--ink);line-height:1.25}
+.vs.gas b{color:var(--c-gas)}.vs.power b{color:var(--c-power)}.vs.heat b{color:var(--c-heat)}.vs.digest b{color:var(--c-digest)}
+.vstats span{font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bubbles circle,.mixer .pa,.mixer .pb,.coil,.gh,.rotor,.bolt,.smoke circle,.stepinfo .prog{animation:none!important}}
+
+/* ===== calculator drawer ===== */
+.scrim{position:fixed;top:calc(var(--barh) + env(safe-area-inset-top,0px));left:0;right:0;bottom:var(--navh);background:rgba(5,8,6,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:30}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:calc(var(--barh) + env(safe-area-inset-top,0px));right:0;bottom:var(--navh);width:min(460px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:40;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain;padding:20px calc(22px + env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) 22px}
+.drawer.on{transform:none}
+.drawer.on{box-shadow:-12px 0 40px rgba(0,0,0,.35)}
+.drawer[hidden]{display:block;visibility:hidden}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.dhead h2{font-size:1.2rem}
+.x{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;flex:none}
+.x svg{width:16px;height:16px}
+.drawer .lead{color:var(--muted);font-size:.9rem;margin:0 0 16px}
+.from{background:var(--surface2);border-radius:10px;padding:8px 12px;font-size:.86rem;margin:0 0 14px;display:none}
+.from.on{display:block}
+.herd{display:grid;gap:6px;margin:0 0 16px;padding:0;border:0}
+.herd legend{font-weight:600;font-size:.95rem;margin-bottom:6px;padding:0}
+.row{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px}
+.herd .row{grid-template-columns:1fr 156px}
+.an{display:flex;align-items:center;gap:10px}
+.emo{width:34px;height:34px;border-radius:10px;background:var(--surface2);display:grid;place-items:center;font-size:1.15rem;flex:none;line-height:1}
+.stp{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.stp input{width:100%;min-width:0;border:0;background:transparent;padding:8px 2px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sb{width:36px;height:38px;border:0;background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer;flex:none}
+.sb:hover{color:var(--ink);background:var(--surface2)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;flex:none}
+.dot.gas{background:var(--c-gas)}.dot.power{background:var(--c-power)}.dot.heat{background:var(--c-heat)}.dot.digest{background:var(--c-digest)}.dot.manure{background:var(--c-manure)}
+.csum{position:sticky;top:-20px;z-index:3;margin:0 -22px 18px;padding:12px 22px;background:var(--surface);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;box-shadow:0 8px 16px -12px rgba(0,0,0,.6)}
+.cs{background:var(--surface2);border-radius:10px;padding:8px 10px;min-width:0;transition:background .3s}
+.cs .cl{display:flex;align-items:center;font-size:.72rem;color:var(--muted);white-space:nowrap}
+.cs b{display:block;font-family:var(--display);font-weight:500;font-size:1.05rem;line-height:1.3;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs small{display:block;font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs.gas b{color:var(--c-gas)} .cs.power b{color:var(--c-power)}
+.v-ok{background:rgba(127,203,138,.15)} .v-ok b{color:var(--ok)}
+.v-warn{background:rgba(245,197,66,.13)} .v-warn b{color:var(--warn)}
+.v-bad{background:rgba(242,133,111,.14)} .v-bad b{color:var(--bad)}
+.rh{font-size:.98rem;margin-bottom:10px}
+.row label{font-size:.94rem}
+.row label small{display:block;color:var(--muted);font-size:.76rem;line-height:1.2}
+.num{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.num input{width:100%;min-width:0;border:0;background:transparent;padding:7px 4px 7px 10px;text-align:right;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num span{padding:0 10px 0 4px;color:var(--muted);font-size:.82rem;white-space:nowrap}
+.share{margin:4px 0 18px}
+.share-head{display:flex;justify-content:space-between;gap:8px;font-size:.94rem}
+.share-head output{font-weight:600;font-variant-numeric:tabular-nums}
+.share p{margin:2px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.35}
+input[type=range]{width:100%;accent-color:var(--flame)}
+.result{border-top:1px solid var(--line);padding-top:16px}
+.result .big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.result .big strong{font-family:var(--display);font-weight:700;font-size:clamp(1.9rem,1.5rem + 1.2vw,2.5rem);color:var(--flame);line-height:1;font-variant-numeric:tabular-nums}
+.result .big span{color:var(--muted)}
+.result .sub{margin:4px 0 14px;color:var(--muted);font-size:.88rem}
+dl.out{display:grid;grid-template-columns:1fr auto;gap:7px 14px;margin:0;font-size:.92rem}
+dl.out dt{color:var(--muted);display:flex;align-items:center}
+dl.out dd{margin:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.econ{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.econ h3{font-size:.98rem;margin-bottom:10px}
+.payback{background:var(--surface2);border-radius:10px;padding:12px 14px;margin-top:12px;transition:background .3s}
+.payback.v-ok{box-shadow:inset 3px 0 0 var(--ok)} .payback.v-warn{box-shadow:inset 3px 0 0 var(--warn)} .payback.v-bad{box-shadow:inset 3px 0 0 var(--bad)}
+.payback b{font-family:var(--display);font-weight:500;font-size:1.25rem;display:block}
+.payback span{font-size:.85rem;color:var(--muted)}
+details{margin-top:14px}
+details summary{cursor:pointer;font-size:.9rem;color:var(--flame)}
+details .rows{display:grid;gap:6px;margin-top:10px}
+details p{font-size:.86rem;color:var(--muted);margin:8px 0}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;font-size:.84rem;width:100%}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:5px 8px 5px 0;text-align:left;font-variant-numeric:tabular-nums}
+.tbl th{font-weight:600}
+.dactions{margin-top:18px}
+.jump{display:inline-block;margin-top:10px;color:var(--flame);font-size:.9rem;text-underline-offset:3px}
+.rating{padding:clamp(28px,4vw,52px) clamp(16px,2.4vw,32px) 56px;max-width:1400px;margin:0 auto}
+.rhead h2{font-size:clamp(1.15rem,.9rem + 1vw,1.6rem);font-weight:700;line-height:1.2}
+.rhead p{color:var(--muted);max-width:72ch;margin:.6rem 0 1.3rem;font-size:.95rem}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px clamp(14px,2vw,26px) 10px}
+.ckey{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;font-size:.84rem;color:var(--muted);margin:0 0 10px}
+.ckey span{display:inline-flex;align-items:center;gap:8px}
+.ckey .sw{width:24px;height:12px;border-radius:3px}
+.ckey .sw.power{background:var(--c-power)}.ckey .sw.heat{background:var(--c-heat)}
+.ckey .mk{width:3px;height:18px;background:var(--ink);border-radius:2px}
+.bars{list-style:none;margin:0;padding:0}
+.bars li{display:grid;grid-template-columns:30px minmax(200px,330px) 1fr 64px 40px;align-items:center;gap:0 14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.bars li:last-child{border-bottom:0}
+.bars .pl{font-family:var(--display);font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.bars .nm button{background:none;border:0;padding:0;cursor:pointer;color:var(--ink);font-weight:500;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.bars .nm button:hover{text-decoration-color:var(--ink)}
+.bars .nm small{display:block;color:var(--muted);font-size:.76rem;line-height:1.3;margin-top:2px}
+.bars .track{position:relative;height:18px;background:var(--surface2);border-radius:4px}
+.bars .fill{position:absolute;top:0;bottom:0}
+.bars .fill.power{left:0;background:var(--c-power);border-radius:4px 0 0 4px}
+.bars .fill.heat{background:var(--c-heat);border-radius:0 4px 4px 0}
+.bars .naive{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px}
+.bars .v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.chg{font-size:.82rem;font-variant-numeric:tabular-nums}
+.chg.up{color:var(--flame)} .chg.down{color:var(--muted)}
+@media (max-width:720px){
+  .bars li{grid-template-columns:24px 1fr 56px 32px;grid-template-areas:"pl nm v chg" ". tr tr tr";row-gap:8px}
+  .bars .pl{grid-area:pl}.bars .nm{grid-area:nm}.bars .track{grid-area:tr}.bars .v{grid-area:v}.bars .chg{grid-area:chg}
+}
+.rnote{color:var(--muted);font-size:.84rem;max-width:92ch;margin:14px 0 0;line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topin">
+    <a class="brand" href="#" id="brandHome"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--flame-ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3 5 5.6 5 9.2A5 5 0 0 1 7 12.2C7 10 8.2 8.4 9.5 7c.2 2 1 3 2.3 3.4C11.6 7.8 11.4 5.4 12 3z"/></svg></span><span>Биогаз<b> в сёлах Казахстана</b></span></a>
+    <nav class="tabs" aria-label="Разделы сайта">
+      <button class="tab" type="button" data-panel="" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="tl">Карта</span><span class="ts">Карта</span></button>
+      <button class="tab" type="button" data-panel="drawer" aria-controls="drawer" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="2.5" width="15" height="19" rx="2.5"/><rect x="7.5" y="5.5" width="9" height="4" rx="1"/><path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 15.5v3"/></svg><span class="tl">Калькулятор</span><span class="ts">Расчёт</span></button>
+      <button class="tab" type="button" data-panel="rating" aria-controls="rating" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tl">Рейтинг</span><span class="ts">Рейтинг</span></button>
+      <button class="tab" type="button" data-panel="howto" aria-controls="howto" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.5 3 5 5.6 5 9.2A5 5 0 0 1 7 12.2C7 10 8.2 8.4 9.5 7c.2 2 1 3 2.3 3.4C11.6 7.8 11.4 5.4 12 3z"/></svg><span class="tl">Как это работает</span><span class="ts">Как работает</span></button>
+    </nav>
+  </div>
+</header>
+
+<div class="stage" id="stage">
+  <header class="head">
+    <h1>Экономическая эффективность биогазовых установок в сельских районах Казахстана</h1>
+    <p>Поголовье скота по областям, 2026 год. Нажмите на область, чтобы увидеть точные данные, и откройте калькулятор, чтобы посчитать энергию.</p>
+    <div class="chips" id="chips" role="group" aria-label="Что показывать на карте"></div>
+  </header>
+
+  <div class="mapbox" id="mapbox">
+    <svg class="map" id="map" role="group" aria-label="Административная карта Казахстана">
+      <defs>
+        <radialGradient id="ctxFade" cx="50%" cy="50%" r="60%"><stop offset=".6" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+        <mask id="ctxMask" maskUnits="userSpaceOnUse" x="-70" y="-40" width="1140" height="640"><rect x="-70" y="-40" width="1140" height="640" fill="url(#ctxFade)"/></mask>
+      </defs>
+      <g class="ctx" mask="url(#ctxMask)" aria-hidden="true"><rect class="water" x="-70" y="-40" width="1140" height="640"/><path class="nbr" d="M536.9,619.8 526.5,619.5 525.1,614.4 516.5,611.3 518.5,602.0 521.9,598.5 527.0,596.1 547.0,599.3 550.1,598.0 552.4,595.2 553.8,587.6 556.6,587.6 557.8,585.0 560.4,584.8 558.4,579.5 563.3,577.9 561.9,576.2 553.6,576.7 553.3,575.3 562.6,573.0 571.9,573.7 570.2,570.3 572.7,568.8 569.6,559.9 572.6,557.3 572.4,553.9 575.3,551.1 584.0,556.1 600.3,546.6 603.2,541.1 610.9,548.1 610.5,550.4 613.7,551.7 612.8,554.4 603.5,563.5 603.4,565.5 608.2,567.5 610.4,571.6 630.6,567.8 637.0,570.4 640.2,569.9 642.1,572.2 649.5,567.7 654.1,560.7 657.0,559.9 660.7,561.6 662.0,559.2 660.8,557.2 661.6,554.9 667.5,556.5 672.0,551.4 681.4,545.6 681.8,544.0 668.1,543.5 659.2,537.6 654.2,538.6 653.2,533.1 645.0,532.9 644.2,528.5 642.1,524.9 639.4,523.5 638.2,520.3 636.5,521.8 636.4,528.2 634.0,529.3 631.7,528.2 631.4,536.4 623.2,535.7 616.0,533.4 613.7,532.1 610.7,525.2 604.6,526.9 596.7,523.4 596.1,521.3 603.6,515.2 608.3,509.3 613.1,507.3 614.3,503.2 624.5,497.7 624.0,496.1 618.9,493.4 610.1,498.2 606.7,503.4 601.9,502.0 593.3,512.1 581.3,518.1 574.0,523.2 573.2,525.2 567.1,527.8 564.7,530.1 562.6,536.2 555.6,542.5 551.4,548.8 551.3,558.3 546.7,558.5 539.3,554.8 536.0,551.5 537.8,543.3 532.6,537.1 528.9,538.3 526.9,537.5 500.6,539.3 497.7,537.9 491.8,507.2 478.1,506.7 481.1,469.7 472.8,473.9 464.6,457.4 458.5,453.3 448.8,441.8 436.0,447.6 402.3,443.3 368.8,446.5 348.0,419.5 344.6,410.7 283.6,361.0 213.0,373.3 193.3,510.0 222.3,516.2 225.6,513.4 223.3,509.3 223.7,494.0 234.1,485.2 249.0,484.5 256.3,474.1 263.1,477.1 265.7,482.6 267.8,482.6 266.7,478.4 260.3,469.3 263.5,467.4 269.4,469.0 273.0,465.0 280.1,474.0 287.7,476.7 290.4,482.8 292.4,484.3 306.4,486.7 309.6,490.1 307.6,498.9 312.0,501.8 314.3,506.0 310.6,507.3 311.8,513.6 309.4,517.9 309.8,520.8 319.6,528.3 331.3,528.3 341.8,531.3 349.3,528.6 353.4,530.3 360.4,536.2 364.9,552.0 372.1,565.6 374.5,579.1 403.2,603.0 410.4,611.4 421.9,619.6 536.9,619.8ZM609.5,542.1 609.7,544.6 607.5,541.7 609.5,542.1ZM628.6,582.7 627.6,579.5 628.9,576.9 624.5,575.9 622.2,573.3 621.0,575.8 623.7,579.2 622.9,582.9 628.6,582.7ZM644.4,581.2 645.3,577.9 641.9,579.9 644.4,581.2Z"/><path class="nbr" d="M95.2,591.2 95.7,580.6 97.2,578.7 96.1,578.4 94.8,579.8 95.2,591.2ZM426.3,618.9 421.9,619.6 410.4,611.4 403.2,603.0 374.5,579.1 370.2,560.4 367.2,557.4 361.7,538.7 357.6,533.4 349.3,528.6 341.8,531.3 331.3,528.3 319.6,528.3 309.8,520.8 309.4,517.9 311.8,513.6 310.6,507.3 314.3,506.0 312.0,501.8 307.6,498.9 309.6,490.1 306.4,486.7 292.4,484.3 290.4,482.8 287.7,476.7 280.1,474.0 273.0,465.0 269.4,469.0 263.5,467.4 260.3,469.3 266.7,478.4 267.8,482.6 265.7,482.6 263.1,477.1 256.3,474.1 249.0,484.5 234.1,485.2 223.7,494.0 223.3,509.3 225.6,513.4 222.3,516.2 192.1,509.8 179.2,509.8 173.6,501.9 165.5,481.4 147.4,464.3 135.2,463.6 116.8,466.0 111.1,468.3 98.7,476.7 100.2,486.5 104.6,499.9 108.7,483.4 107.2,480.9 113.3,471.9 119.5,468.6 132.5,469.3 137.3,470.9 141.6,494.4 145.9,501.0 153.5,508.8 155.9,513.8 154.2,521.0 150.1,521.9 145.4,519.7 143.6,520.8 144.4,526.3 139.3,524.4 129.7,525.5 126.8,524.3 123.6,517.9 121.0,517.0 115.4,517.8 110.4,515.3 106.1,506.4 95.8,528.8 95.4,541.9 100.2,553.4 98.6,548.5 100.2,545.3 112.0,548.5 114.0,550.8 112.0,559.6 114.8,562.4 115.0,564.7 108.8,564.0 104.8,560.6 100.4,566.5 99.8,569.6 100.2,572.8 101.9,571.1 105.9,570.9 115.8,577.7 115.6,581.7 118.9,588.1 112.1,620.0 427.5,620.0 426.3,618.9Z"/><path class="nbr" d="M706.0,620.0 704.6,615.0 707.2,611.6 700.5,602.5 700.5,594.2 695.8,594.2 685.5,598.7 669.5,599.4 663.5,601.3 660.1,606.4 654.2,601.4 646.7,604.6 645.0,603.7 645.0,599.3 638.1,597.6 638.4,594.8 636.9,593.0 625.2,597.8 623.6,601.0 617.6,601.9 615.7,601.3 611.7,595.8 608.5,595.1 601.1,597.1 598.9,595.7 592.6,597.1 582.1,596.7 573.4,598.8 571.1,590.0 572.4,584.1 573.1,582.2 578.1,583.9 577.8,580.1 579.5,577.2 592.0,572.8 606.3,577.9 608.3,581.6 611.4,579.6 611.9,576.4 620.4,572.1 620.7,570.1 610.4,571.6 608.2,567.5 603.4,565.5 603.6,562.9 613.8,552.4 610.5,550.4 610.9,548.1 603.2,541.1 600.3,546.6 584.0,556.1 575.3,551.1 573.7,552.3 572.4,553.9 572.6,557.3 569.6,559.9 572.7,568.8 570.2,570.3 571.9,573.7 562.6,573.0 553.3,575.3 553.6,576.7 561.9,576.2 563.3,577.9 558.4,579.5 560.4,584.8 557.8,585.0 556.6,587.6 553.8,587.6 552.4,595.2 550.1,598.0 547.0,599.3 527.0,596.1 521.9,598.5 518.5,602.0 516.3,610.3 517.8,612.0 525.1,614.4 526.0,619.0 528.7,620.0 706.0,620.0ZM609.7,544.6 609.5,542.1 607.5,541.7 609.7,544.6ZM614.0,586.0 612.8,584.9 607.5,584.1 609.9,587.5 614.0,586.0Z"/><path class="nbr" d="M-89.7,402.5 -83.7,403.9 -80.3,406.4 -85.1,416.5 -78.4,425.0 -71.8,428.6 -64.2,435.4 -64.0,438.2 -59.0,439.0 -50.0,455.3 -49.8,460.8 -43.5,465.8 -34.2,468.8 -26.6,461.3 -16.0,458.3 -8.9,450.7 -13.1,445.5 -17.7,428.8 -24.2,414.5 -23.5,409.6 -24.6,405.8 -27.9,399.8 -22.2,382.8 -15.0,370.1 -17.7,371.3 -23.0,380.8 -21.9,359.8 -27.0,349.1 -33.3,344.4 -33.6,341.1 -30.9,335.8 -24.4,332.6 -22.3,329.5 -20.8,332.3 -10.1,319.5 -6.6,312.5 -2.5,309.3 -2.8,303.4 0.6,308.0 3.3,304.7 6.4,306.4 15.5,305.8 25.6,300.6 31.5,303.5 32.0,296.3 42.9,294.9 44.9,291.8 48.0,292.2 48.1,290.4 33.0,276.4 32.9,272.7 34.8,270.9 42.5,274.8 44.4,274.5 45.0,272.7 39.8,250.2 33.8,233.6 32.7,232.0 17.9,225.9 12.6,227.0 9.8,218.1 12.1,211.7 11.8,207.5 3.8,198.4 4.2,192.1 8.7,184.3 20.0,173.8 16.6,164.5 21.9,153.0 25.9,148.0 33.3,144.1 37.7,134.7 43.1,131.0 47.6,133.1 57.5,155.9 59.5,157.6 68.1,155.8 70.8,153.1 71.1,129.9 75.2,131.4 89.4,125.0 95.4,117.4 103.3,117.4 114.4,113.8 130.4,100.3 138.2,105.1 140.3,107.6 141.1,112.3 147.2,113.3 157.8,108.1 162.9,107.7 165.2,109.3 169.3,117.7 187.0,121.0 191.0,124.8 193.6,131.0 199.3,135.4 202.8,140.6 207.8,151.4 207.7,158.9 209.4,161.1 212.4,156.8 211.7,145.7 214.3,143.7 219.2,147.1 229.2,159.2 236.4,163.5 245.7,159.9 248.6,155.3 257.7,149.9 260.6,151.7 270.2,149.8 274.0,151.4 279.5,157.7 284.6,157.0 289.7,151.3 301.8,153.7 305.9,157.7 312.7,169.0 325.9,173.1 327.5,174.7 327.1,178.1 334.3,175.4 338.5,167.5 341.1,165.8 346.1,171.8 349.2,173.0 361.6,173.4 372.7,168.0 378.3,154.5 377.9,150.9 373.7,146.1 365.7,143.6 364.8,141.8 353.3,136.6 351.9,131.8 344.2,125.1 353.9,118.7 359.7,118.2 367.7,111.8 363.7,98.7 370.8,88.0 378.8,87.8 391.7,90.6 394.3,88.5 393.0,84.5 385.3,79.5 375.1,76.5 374.4,74.6 376.2,70.6 380.1,70.5 383.3,68.2 382.1,66.0 376.9,66.7 371.1,63.6 374.5,58.9 375.8,51.0 377.9,49.1 380.2,48.1 393.2,52.9 395.8,51.0 406.0,51.2 409.1,49.3 418.9,48.5 421.6,46.1 436.2,44.3 450.0,39.3 454.1,40.6 460.3,39.1 463.8,41.3 465.3,40.5 467.2,34.8 472.6,30.9 477.6,31.2 482.2,28.4 483.1,29.7 488.9,29.5 500.6,26.9 521.1,21.8 524.0,19.1 531.1,17.8 533.0,14.9 532.1,10.9 538.9,9.1 548.6,1.9 559.7,2.8 574.9,9.6 581.2,4.8 586.6,3.7 590.7,10.1 597.7,29.6 597.5,38.5 595.5,42.5 596.5,44.2 602.0,46.0 616.6,43.3 620.3,38.5 625.3,45.8 627.1,52.5 630.0,50.3 629.3,46.8 630.5,45.0 637.0,45.5 644.4,50.6 647.7,50.1 652.7,45.8 654.8,46.5 654.5,50.8 648.6,55.8 646.9,59.8 646.8,64.0 649.9,69.4 654.8,64.1 659.5,62.1 667.5,63.0 671.0,66.0 672.6,59.8 680.5,52.3 685.3,51.7 688.8,48.8 691.9,45.6 692.8,41.0 698.3,39.4 710.0,30.6 715.0,29.1 721.9,24.1 719.3,35.7 714.2,36.1 716.2,40.8 750.4,64.8 797.2,125.3 813.7,150.0 815.7,150.3 815.7,147.2 818.3,144.0 822.9,141.9 821.9,133.0 827.8,127.7 831.2,127.5 833.9,130.5 837.6,129.8 837.9,138.3 845.3,137.4 848.7,145.0 859.4,141.9 863.7,143.2 872.8,140.7 877.7,133.3 883.7,131.9 886.3,127.8 890.8,126.6 906.2,131.7 913.7,139.9 917.6,148.0 919.5,149.4 926.5,149.2 936.7,152.3 938.5,158.4 946.4,167.3 963.6,165.6 965.0,167.2 969.9,166.0 979.0,152.8 981.0,155.4 979.1,159.3 979.9,160.9 982.0,160.5 991.4,168.6 997.6,169.7 1001.0,173.9 1003.3,173.6 1005.2,171.3 1015.8,165.9 1018.1,162.5 1017.9,154.9 1027.9,150.7 1032.9,150.7 1033.6,146.9 1036.8,148.6 1038.9,146.8 1040.7,141.3 1044.4,140.8 1049.3,135.2 1047.0,128.6 1053.8,123.3 1054.4,118.8 1066.7,109.8 1072.9,100.1 1081.2,95.3 1085.5,86.1 1090.0,83.3 1090.0,-60.0 -90.0,-60.0 -89.7,402.5ZM8.7,313.8 9.4,311.4 9.2,307.7 7.8,310.7 8.7,313.8Z"/><path class="nbr" d="M1087.4,84.3 1081.3,93.2 1081.2,95.3 1072.9,100.1 1066.7,109.8 1054.4,118.8 1053.8,123.3 1047.0,128.6 1049.3,135.2 1044.4,140.8 1040.7,141.3 1038.9,146.8 1036.8,148.6 1033.6,146.9 1032.9,150.7 1027.9,150.7 1017.9,154.9 1018.1,162.5 1014.7,167.0 1011.9,167.9 1014.9,173.4 1013.1,178.6 1016.1,181.3 1022.4,182.8 1022.0,188.9 1036.7,191.4 1039.8,197.0 1053.5,201.6 1057.3,201.3 1063.6,197.5 1073.1,202.6 1078.5,198.9 1081.8,203.1 1087.7,204.0 1090.0,207.2 1090.0,83.3 1087.4,84.3Z"/><path class="nbr" d="M620.7,570.1 620.4,572.1 611.9,576.4 611.4,579.6 608.3,581.6 606.3,577.9 592.0,572.8 579.5,577.2 577.8,580.1 578.1,583.9 573.1,582.2 572.4,584.1 571.1,590.0 573.4,598.8 582.1,596.7 592.6,597.1 598.9,595.7 601.1,597.1 608.5,595.1 611.7,595.8 615.7,601.3 617.6,601.9 623.6,601.0 625.2,597.8 636.9,593.0 638.4,594.8 638.1,597.6 645.0,599.3 645.0,603.7 646.7,604.6 654.2,601.4 660.1,606.4 663.5,601.3 669.5,599.4 685.5,598.7 695.8,594.2 700.5,594.2 706.0,592.2 708.3,587.6 705.3,580.6 709.1,571.2 720.9,566.5 728.0,559.3 732.3,558.2 731.0,554.5 731.8,552.4 739.8,552.7 751.9,544.9 756.7,556.4 762.3,555.8 772.9,549.8 775.0,552.5 779.2,548.3 782.8,535.4 786.5,527.3 788.6,525.4 807.9,524.0 814.2,520.7 822.8,518.7 829.9,504.7 851.6,487.5 864.1,481.0 865.5,477.1 875.7,473.9 875.4,470.2 874.5,468.1 865.1,461.2 851.1,460.9 841.1,451.4 834.5,452.4 824.1,450.6 810.4,452.9 788.5,453.9 781.4,452.5 768.5,456.2 750.1,457.8 744.9,463.0 737.4,463.0 721.8,459.3 704.1,451.1 702.5,453.0 697.1,453.5 695.6,456.0 687.0,461.7 684.5,477.3 687.1,484.0 681.0,481.0 668.9,479.8 665.9,477.1 652.3,473.6 639.4,472.0 631.2,474.6 628.6,474.1 621.8,478.9 614.8,491.5 616.5,494.9 618.9,493.4 624.0,496.1 624.5,497.7 614.3,503.2 613.1,507.3 608.3,509.3 596.0,522.5 604.6,526.9 610.7,525.2 613.7,532.1 616.0,533.4 623.2,535.7 631.4,536.4 631.7,528.2 634.0,529.3 636.4,528.2 636.5,521.8 638.2,520.3 639.4,523.5 642.1,524.9 644.2,528.5 645.0,532.9 653.2,533.1 654.2,538.6 659.2,537.6 668.1,543.5 677.6,543.1 682.0,544.6 672.0,551.4 667.5,556.5 661.6,554.9 660.8,557.2 662.0,559.2 660.7,561.6 657.0,559.9 654.1,560.7 649.5,567.7 642.1,572.2 640.2,569.9 637.0,570.4 630.6,567.8 620.7,570.1ZM628.6,582.7 622.9,582.9 623.7,579.2 621.0,575.8 622.2,573.3 624.5,575.9 628.9,576.9 627.6,579.5 628.6,582.7ZM645.3,577.9 644.4,581.2 641.9,579.9 645.3,577.9ZM614.0,586.0 609.9,587.5 607.5,584.1 612.8,584.9 614.0,586.0Z"/><path class="nbr" d="M60.0,350.6 57.0,346.2 60.0,341.8 57.4,342.6 55.8,346.4 57.5,350.9 60.0,350.6ZM63.3,347.3 65.0,346.1 66.2,343.1 63.3,344.8 63.3,347.3ZM129.3,343.4 129.5,339.3 128.3,338.7 126.5,340.4 129.3,343.4ZM616.5,494.9 614.8,491.5 618.0,484.0 624.1,476.2 637.9,472.1 652.3,473.6 665.9,477.1 668.9,479.8 681.0,481.0 687.1,484.0 684.5,477.3 687.0,461.7 695.6,456.0 697.1,453.5 702.5,453.0 704.1,451.1 721.8,459.3 737.4,463.0 744.9,463.0 750.1,457.8 768.5,456.2 781.4,452.5 788.5,453.9 810.4,452.9 824.1,450.6 834.5,452.4 841.1,451.4 851.1,460.9 865.1,461.2 874.5,468.1 875.6,466.2 870.4,452.2 870.8,448.0 871.7,445.4 879.1,441.2 879.0,439.8 874.2,438.3 873.9,435.7 879.5,431.4 883.3,431.7 883.9,429.3 879.7,424.4 879.9,419.9 877.5,415.1 866.1,396.7 863.1,379.9 863.1,375.9 865.4,373.2 858.8,370.8 852.1,372.4 848.2,369.8 852.4,364.4 866.7,357.2 872.4,356.1 892.7,343.8 896.2,347.9 900.7,349.5 908.6,345.7 916.0,347.8 917.3,341.1 916.0,336.3 907.9,334.3 907.1,331.5 913.4,277.4 913.1,269.0 914.4,267.8 931.5,271.3 939.5,271.5 947.4,268.7 955.8,267.7 960.0,272.2 969.4,262.0 975.4,259.4 977.9,251.4 968.7,227.9 969.9,209.4 987.9,199.2 990.3,192.0 988.2,180.4 990.6,176.5 1001.0,173.9 999.8,171.8 997.6,169.7 991.4,168.6 982.0,160.5 979.9,160.9 979.1,159.3 981.0,155.4 979.0,152.8 969.9,166.0 965.0,167.2 963.6,165.6 946.4,167.3 938.5,158.4 936.7,152.3 926.5,149.2 919.5,149.4 917.6,148.0 913.7,139.9 906.2,131.7 890.8,126.6 886.3,127.8 883.7,131.9 877.7,133.3 872.8,140.7 863.7,143.2 859.4,141.9 848.7,145.0 845.3,137.4 837.9,138.3 837.6,129.8 833.9,130.5 831.2,127.5 827.8,127.7 821.9,133.0 822.9,141.9 818.3,144.0 815.7,147.2 815.7,150.3 813.7,150.0 797.2,125.3 750.4,64.8 716.2,40.8 714.2,36.1 719.3,35.7 721.9,24.1 715.0,29.1 710.0,30.6 698.3,39.4 692.8,41.0 691.9,45.6 688.8,48.8 685.3,51.7 680.5,52.3 672.6,59.8 671.0,66.0 667.5,63.0 659.5,62.1 654.8,64.1 649.9,69.4 646.8,64.0 646.9,59.8 648.6,55.8 654.5,50.8 654.8,46.5 652.7,45.8 647.7,50.1 644.4,50.6 637.0,45.5 630.5,45.0 629.3,46.8 630.0,50.3 627.1,52.5 625.3,45.8 620.3,38.5 616.6,43.3 602.0,46.0 596.5,44.2 595.5,42.5 597.5,38.5 597.7,29.6 590.7,10.1 586.6,3.7 581.2,4.8 574.9,9.6 559.7,2.8 548.6,1.9 538.9,9.1 532.1,10.9 533.0,14.9 531.1,17.8 524.0,19.1 521.1,21.8 500.6,26.9 488.9,29.5 483.1,29.7 482.2,28.4 477.6,31.2 472.6,30.9 467.2,34.8 465.3,40.5 463.8,41.3 460.3,39.1 454.1,40.6 450.0,39.3 436.2,44.3 421.6,46.1 418.9,48.5 409.1,49.3 406.0,51.2 395.8,51.0 393.2,52.9 380.2,48.1 377.9,49.1 375.8,51.0 374.5,58.9 371.1,63.6 376.9,66.7 382.1,66.0 383.3,68.2 380.1,70.5 376.2,70.6 374.4,74.6 375.1,76.5 385.3,79.5 393.0,84.5 394.3,88.5 391.7,90.6 378.8,87.8 370.8,88.0 363.7,98.7 367.7,111.8 359.7,118.2 353.9,118.7 344.2,125.1 351.9,131.8 353.3,136.6 364.8,141.8 365.7,143.6 373.7,146.1 377.9,150.9 378.3,154.5 372.7,168.0 361.6,173.4 349.2,173.0 346.1,171.8 341.1,165.8 338.5,167.5 334.3,175.4 327.1,178.1 327.5,174.7 325.9,173.1 312.7,169.0 305.9,157.7 301.8,153.7 289.7,151.3 284.6,157.0 279.5,157.7 274.0,151.4 270.2,149.8 260.6,151.7 257.7,149.9 248.6,155.3 245.7,159.9 236.4,163.5 229.2,159.2 219.2,147.1 214.3,143.7 211.7,145.7 212.4,156.8 209.4,161.1 207.7,158.9 207.8,151.4 202.8,140.6 199.3,135.4 193.6,131.0 191.0,124.8 187.0,121.0 169.3,117.7 165.2,109.3 162.9,107.7 157.8,108.1 147.2,113.3 141.1,112.3 140.3,107.6 138.2,105.1 130.4,100.3 114.4,113.8 103.3,117.4 95.4,117.4 89.4,125.0 75.2,131.4 71.1,129.9 70.8,153.1 68.1,155.8 59.5,157.6 57.5,155.9 47.6,133.1 43.1,131.0 37.7,134.7 33.3,144.1 25.9,148.0 21.9,153.0 16.6,164.5 20.0,173.8 8.7,184.3 4.2,192.1 3.8,198.4 11.8,207.5 12.1,211.7 9.8,218.1 12.6,227.0 17.9,225.9 32.7,232.0 33.8,233.6 39.8,250.2 45.0,272.7 44.4,274.5 42.5,274.8 34.8,270.9 32.6,274.6 33.9,277.7 48.1,290.4 47.8,288.5 50.3,287.1 52.0,288.5 52.6,284.4 66.8,284.8 82.6,277.3 86.7,278.1 96.4,274.1 103.5,272.9 113.8,278.1 116.4,282.3 122.8,284.8 125.5,288.2 131.1,286.7 135.4,283.9 146.1,287.3 149.3,291.6 150.6,299.1 146.5,305.8 146.4,316.6 142.5,324.5 132.8,337.9 134.0,341.0 142.3,348.8 134.7,347.9 122.7,342.4 104.6,339.0 99.2,340.1 96.1,338.9 89.9,346.7 82.1,352.8 82.5,357.1 87.7,365.6 90.7,366.9 93.1,370.1 83.3,369.2 75.9,362.7 64.1,360.3 60.8,361.3 58.6,365.4 58.4,369.5 59.6,370.9 68.4,375.1 71.7,378.6 74.5,396.3 78.7,407.5 76.2,418.8 84.7,421.1 90.2,433.3 98.0,434.9 99.9,437.9 106.1,438.3 108.5,441.1 106.7,453.4 100.1,464.7 98.7,476.7 111.1,468.3 116.8,466.0 135.2,463.6 147.4,464.3 165.5,481.4 173.6,501.9 177.8,508.7 180.8,510.4 193.3,510.0 213.0,373.3 283.6,361.0 344.6,410.7 348.0,419.5 368.8,446.5 402.3,443.3 436.0,447.6 448.8,441.8 458.5,453.3 464.6,457.4 472.8,473.9 481.1,469.7 478.1,506.7 491.8,507.2 497.7,537.9 500.6,539.3 526.9,537.5 528.9,538.3 532.6,537.1 537.8,543.3 536.0,551.5 543.1,557.2 551.3,558.3 551.4,548.8 555.6,542.5 562.6,536.2 564.7,530.1 567.1,527.8 573.2,525.2 574.0,523.2 581.3,518.1 593.3,512.1 601.9,502.0 606.7,503.4 610.1,498.2 616.5,494.9Z"/><path class="nbr" d="M-7.0,620.0 -23.8,613.4 -31.1,606.0 -32.7,592.3 -30.6,576.7 -38.9,575.6 -42.4,568.0 -45.4,566.3 -47.3,561.5 -51.7,556.8 -51.9,554.2 -49.8,552.8 -42.1,551.5 -41.9,548.4 -45.5,544.8 -45.5,542.1 -43.9,539.7 -37.8,537.9 -44.5,525.3 -51.2,524.9 -61.0,528.2 -77.9,536.0 -82.1,536.1 -90.0,540.9 -90.0,620.0 -7.0,620.0Z"/><path class="nbr" d="M-90.0,453.8 -85.1,457.0 -80.9,456.9 -74.3,463.7 -68.8,461.8 -66.3,457.5 -74.1,446.8 -74.6,443.0 -76.1,441.7 -74.7,437.7 -71.7,437.7 -66.9,433.8 -71.8,428.6 -78.4,425.0 -85.1,416.5 -80.3,406.4 -90.0,401.7 -90.0,453.8Z"/><path class="nbr" d="M1089.4,206.6 1087.7,204.0 1081.8,203.1 1078.5,198.9 1073.1,202.6 1063.6,197.5 1057.3,201.3 1053.5,201.6 1039.8,197.0 1036.7,191.4 1022.0,188.9 1022.4,182.8 1016.1,181.3 1013.1,178.6 1014.9,173.4 1011.9,167.9 1003.3,173.6 998.6,173.8 990.6,176.5 988.2,180.4 990.3,192.0 987.9,199.2 981.7,203.7 971.6,208.0 969.2,212.4 968.7,227.9 977.9,251.4 975.4,259.4 969.4,262.0 960.0,272.2 955.8,267.7 947.4,268.7 939.5,271.5 931.5,271.3 914.4,267.8 913.1,269.0 913.4,277.4 907.1,331.5 907.9,334.3 916.0,336.3 917.3,341.1 916.0,347.8 908.6,345.7 900.7,349.5 896.2,347.9 892.7,343.8 872.4,356.1 866.7,357.2 852.4,364.4 848.2,369.8 852.1,372.4 858.8,370.8 865.4,373.2 863.1,375.9 863.1,379.9 866.1,396.7 877.5,415.1 879.9,419.9 879.7,424.4 883.9,429.3 883.3,431.7 879.5,431.4 873.9,435.7 874.2,438.3 879.0,439.8 879.1,441.2 871.7,445.4 870.2,450.7 875.2,464.8 874.5,468.1 876.2,473.4 865.5,477.1 864.1,481.0 851.6,487.5 837.5,498.1 827.9,506.8 828.0,510.2 822.8,518.7 814.2,520.7 807.9,524.0 788.6,525.4 786.5,527.3 782.8,535.4 779.2,548.3 775.0,552.5 772.9,549.8 762.3,555.8 756.7,556.4 752.8,545.6 750.9,544.9 743.5,551.3 736.8,553.2 731.8,552.4 731.0,554.5 732.3,558.2 728.0,559.3 720.9,566.5 709.8,570.5 705.3,580.6 708.2,588.7 706.0,592.2 700.5,594.2 700.5,602.5 707.2,611.6 704.4,616.2 706.0,620.0 1090.0,620.0 1089.4,206.6Z"/><path class="nbr" d="M-90.0,540.9 -51.2,524.9 -44.5,525.3 -37.8,537.9 -43.9,539.7 -45.5,542.1 -45.5,544.8 -41.9,548.4 -42.1,551.5 -49.8,552.8 -52.1,555.3 -45.4,566.3 -42.4,568.0 -38.9,575.6 -30.6,576.7 -27.5,562.0 -20.4,552.4 -18.0,554.8 -18.4,557.8 -16.9,557.2 -11.7,548.6 -8.5,546.9 -7.4,537.2 4.0,517.4 15.4,515.3 21.8,516.5 27.8,519.5 27.2,514.3 24.4,510.1 19.6,506.3 13.6,504.6 6.5,494.7 2.0,484.9 0.1,471.1 -8.9,450.7 -16.0,458.3 -26.6,461.3 -34.2,468.8 -36.3,468.8 -48.5,462.4 -51.1,452.7 -59.0,439.0 -64.0,438.2 -64.2,435.4 -66.9,433.8 -71.7,437.7 -74.7,437.7 -76.1,441.7 -74.6,443.0 -74.1,446.8 -66.3,457.5 -68.8,461.8 -74.3,463.7 -80.9,456.9 -85.1,457.0 -90.0,453.8 -90.0,517.4 -88.7,518.6 -90.0,521.6 -89.0,531.4 -90.0,531.8 -90.0,540.9Z"/><path class="nbr" d="M-90.0,521.6 -88.7,518.6 -90.0,517.4 -90.0,521.6ZM-89.0,531.4 -90.0,529.1 -90.0,531.8 -89.0,531.4Z"/><g class="ctxl"><text class="" x="398.8" y="-8.9">Россия</text><text class="" x="1029.7" y="364.9">Китай</text><text class="" x="718.1" y="511.7">Кыргызстан</text><text class="" x="407.0" y="516.1">Узбекистан</text><text class="" x="232.9" y="542.6">Туркменистан</text><text class="w" x="40" y="445">Каспийское море</text></g></g>
+      <g class="lakes" id="mapLakes" aria-hidden="true"><path d="M817.4,313.8 817.1,309.5 820.8,308.5 821.4,306.2 820.1,303.6 816.9,301.0 814.4,301.6 815.1,304.0 811.1,302.3 808.5,303.5 808.4,305.0 813.0,308.8 809.7,309.6 810.1,308.0 807.8,305.4 803.9,305.6 801.2,311.7 800.9,308.8 799.9,311.8 798.5,308.9 799.3,314.6 798.3,317.6 793.4,312.6 791.1,313.3 786.5,311.7 779.9,312.1 779.7,313.6 771.7,315.2 770.0,317.7 768.0,318.4 765.4,315.4 761.7,315.9 759.4,314.1 759.4,315.6 762.5,318.7 756.9,316.7 756.4,314.7 752.1,316.2 751.3,318.0 748.4,316.6 748.1,317.2 747.0,313.8 741.2,312.1 736.2,314.1 736.3,312.0 735.3,311.6 732.9,313.7 729.3,313.8 724.6,316.6 719.4,317.7 714.6,315.5 713.7,313.4 711.8,316.6 711.2,314.3 710.4,315.5 708.8,315.0 708.0,317.0 701.9,317.6 702.7,318.6 701.0,318.9 700.6,324.4 697.2,326.0 696.9,328.4 693.7,329.8 692.6,331.5 690.8,331.2 689.3,332.3 686.3,337.0 688.0,339.6 689.4,339.3 688.3,341.0 685.0,340.7 683.9,342.4 682.1,340.0 681.4,341.8 679.6,342.1 679.3,346.2 682.6,349.5 679.9,349.6 678.4,356.2 676.0,355.0 674.7,356.4 675.1,357.6 678.2,358.5 677.0,361.4 675.2,361.6 675.1,364.2 681.0,367.7 683.0,371.5 684.8,372.7 683.9,373.0 686.6,374.6 686.4,375.6 688.8,377.6 691.7,377.6 691.1,378.3 692.8,380.2 691.7,380.5 691.6,381.7 693.1,383.6 691.9,384.8 692.4,385.7 696.1,386.7 695.7,383.9 694.4,384.7 694.0,383.9 696.6,382.0 695.3,377.6 695.6,373.3 695.3,372.0 694.2,373.2 693.0,372.4 692.4,365.9 697.0,362.2 696.5,359.4 698.9,359.4 697.0,357.5 695.8,357.6 696.1,356.0 697.2,356.7 698.1,355.2 694.9,348.0 699.8,345.6 702.5,347.2 705.2,345.3 705.6,343.4 708.4,342.6 709.5,340.8 708.6,338.9 710.7,330.7 713.8,330.9 716.4,326.5 715.4,328.9 719.1,329.2 720.3,327.9 719.3,326.9 720.3,326.3 720.0,324.9 721.9,325.0 722.2,327.4 723.6,325.7 724.2,326.4 725.2,325.2 722.8,320.9 724.6,318.9 727.4,319.3 726.2,320.8 725.4,319.3 724.6,320.7 728.0,324.6 726.9,326.4 730.2,325.5 731.1,323.6 732.9,324.3 735.3,322.5 737.6,322.9 737.2,323.8 740.4,323.5 740.1,322.0 743.7,322.3 745.6,320.1 748.7,321.1 757.9,320.3 762.4,322.6 762.7,321.8 766.6,322.3 769.1,320.7 771.2,321.7 775.0,319.1 780.1,321.6 783.8,321.5 783.4,322.9 786.4,320.9 784.3,321.2 785.6,320.2 792.2,323.6 795.4,323.6 795.7,322.9 793.7,322.7 797.8,322.5 798.7,321.2 802.6,323.4 803.4,322.1 801.6,320.5 802.4,319.1 813.6,318.8 816.1,316.8 817.4,313.8Z"/><path d="M1075.2,436.1 1072.6,434.6 1071.2,430.8 1056.0,430.6 1058.0,435.1 1056.1,436.8 1056.4,441.1 1055.0,442.0 1057.2,442.2 1066.6,435.9 1071.3,435.8 1074.1,436.9 1075.2,436.1Z"/><path d="M650.7,82.8 651.6,82.0 650.2,72.4 646.9,71.4 642.0,72.0 640.0,73.6 641.4,74.5 639.3,76.2 639.6,77.5 640.9,77.9 642.3,74.1 643.4,76.9 651.3,84.1 650.7,82.8Z"/><path d="M863.0,305.5 871.3,305.0 869.8,302.6 871.3,303.6 872.4,300.0 870.5,297.6 865.2,299.1 863.2,298.7 862.6,299.6 860.5,298.5 855.7,298.9 856.8,301.6 859.6,302.3 863.0,305.5Z"/><path d="M932.1,352.0 925.2,351.0 922.1,355.7 933.2,358.5 935.0,354.8 932.1,352.0Z"/><path d="M969.9,192.8 966.0,192.9 962.6,194.9 961.8,198.7 968.7,198.9 972.7,192.9 971.9,191.6 969.9,192.8Z"/><path d="M573.5,48.1 570.5,46.1 569.0,46.3 566.8,50.9 567.5,53.2 568.9,53.0 572.1,49.4 573.5,51.9 573.5,48.1Z"/><path d="M944.9,233.0 938.8,230.5 933.8,230.3 932.4,231.7 931.7,230.2 928.7,229.0 916.4,226.6 919.9,221.5 922.7,221.7 926.4,219.2 922.5,219.0 920.3,220.9 917.3,220.0 915.2,217.8 913.8,212.7 911.2,209.6 912.8,201.9 920.6,197.2 921.7,194.8 932.2,187.4 927.5,187.8 917.1,182.1 916.2,180.4 910.2,179.8 911.3,178.9 910.5,177.5 913.0,177.1 912.3,174.8 915.7,171.3 916.2,169.3 913.3,171.1 911.0,176.3 907.9,176.2 904.6,177.7 901.8,176.5 904.2,179.9 905.4,180.2 906.3,178.8 910.6,183.3 911.4,181.8 914.7,181.6 919.9,184.1 924.1,187.4 925.3,189.9 920.9,194.3 916.2,196.4 912.2,200.3 910.0,204.7 910.3,209.8 911.8,212.6 910.6,216.4 911.4,218.4 913.1,221.0 917.6,222.3 915.7,224.0 915.2,226.9 910.1,227.6 906.8,230.2 904.4,229.1 904.6,231.2 913.1,235.4 921.8,234.9 925.8,236.6 927.5,238.9 934.4,239.7 939.2,242.6 941.8,241.5 939.6,242.0 938.2,240.7 942.1,239.8 941.3,238.2 942.6,234.7 944.9,233.0Z"/><path d="M547.5,540.2 542.5,538.4 541.3,536.5 537.1,537.8 535.3,535.3 531.9,535.4 535.5,542.8 537.9,541.9 542.4,543.7 547.5,540.2Z"/><path d="M804.7,420.1 809.0,414.7 805.2,414.4 801.6,416.2 795.4,416.4 786.5,414.8 783.5,416.9 780.9,417.1 780.4,418.6 781.5,420.9 786.3,419.6 791.5,420.6 801.2,419.6 802.1,420.6 804.7,420.1Z"/><path d="M814.2,462.2 813.3,461.4 814.1,459.6 818.8,456.1 804.5,458.9 797.9,462.7 792.1,462.2 783.9,466.1 774.7,468.9 772.9,471.0 770.1,471.5 769.1,473.2 764.9,473.2 762.1,475.2 764.7,479.5 768.1,478.0 773.0,479.9 778.4,479.9 783.9,482.8 784.5,482.0 789.5,482.5 793.6,480.9 799.1,480.9 804.5,478.2 808.3,472.1 810.0,471.4 807.3,470.6 807.3,469.4 812.6,467.1 815.4,463.0 819.6,462.8 820.2,461.5 814.2,462.2Z"/><path d="M249.3,499.0 244.0,494.8 245.7,491.0 242.4,488.3 244.1,485.8 243.2,481.3 237.9,477.2 233.5,478.6 227.2,491.0 225.1,498.6 225.7,501.5 228.0,496.7 230.5,500.5 230.3,504.0 232.7,506.9 235.7,505.2 237.2,506.3 239.2,505.3 240.8,506.0 243.6,504.0 247.8,503.6 249.3,499.0Z"/><path d="M900.8,326.8 897.6,319.6 895.7,310.4 893.6,309.0 892.5,306.3 889.3,303.8 885.5,302.8 883.3,303.6 883.3,302.5 882.0,303.3 881.3,302.5 878.0,307.2 879.0,310.7 878.2,311.4 880.0,314.8 879.1,315.9 879.7,319.4 884.1,320.5 890.8,326.1 896.0,324.1 900.8,326.8Z"/><path d="M569.2,180.7 565.7,182.2 568.3,178.8 561.0,177.5 560.2,178.2 560.7,180.5 558.0,182.1 556.3,186.7 557.0,183.5 549.4,183.6 548.1,185.7 547.4,193.7 545.7,195.5 547.7,194.9 548.3,196.6 553.4,198.0 557.6,196.2 557.1,194.5 560.7,195.0 560.3,191.3 557.5,190.8 556.5,193.0 554.2,188.8 557.0,187.4 558.9,182.3 561.3,181.1 561.9,179.2 565.0,179.8 560.9,182.9 566.7,182.6 569.2,180.7Z"/><path d="M459.2,94.3 455.5,100.9 451.0,104.5 450.2,107.3 448.0,109.5 449.9,108.6 450.9,109.4 452.5,107.6 454.1,108.0 453.5,105.6 455.0,106.7 458.1,103.9 459.4,101.4 458.9,97.8 460.4,94.9 459.2,94.3Z"/><path d="M535.1,542.2 531.9,546.2 527.9,548.9 521.5,551.3 516.7,551.3 517.7,549.3 514.2,548.7 513.6,546.6 509.3,546.4 505.5,544.5 485.2,543.5 480.6,544.3 501.7,548.6 508.1,553.0 510.4,552.1 515.2,553.3 515.3,557.0 523.5,563.4 524.2,562.8 523.0,558.3 519.9,554.7 526.3,551.6 529.0,552.6 530.2,551.2 531.9,551.4 535.0,546.9 536.2,542.3 535.1,542.2Z"/><path d="M277.0,376.4 271.8,386.5 273.4,396.0 270.8,398.7 270.5,401.0 271.0,402.2 273.2,402.8 277.3,400.2 280.5,390.3 282.4,388.8 281.2,385.0 282.1,382.3 281.1,381.5 285.2,377.3 284.3,372.1 286.2,364.9 289.1,361.3 292.0,360.3 293.9,353.0 299.3,349.7 301.0,350.7 302.9,350.2 304.9,346.3 303.2,346.4 301.4,348.8 298.8,347.9 298.1,349.7 292.7,348.2 291.7,349.5 292.1,351.3 288.8,350.9 282.8,366.5 278.8,370.5 277.0,376.4Z"/><path d="M318.2,343.5 318.8,338.5 317.9,335.9 311.3,334.9 316.3,344.3 318.2,343.5Z"/><path d="M345.8,346.7 349.0,343.9 355.4,341.8 358.0,336.4 357.8,332.8 362.5,329.2 364.7,325.9 359.1,326.6 358.6,327.9 356.2,328.9 357.5,332.1 353.9,333.7 347.7,332.3 345.0,328.0 346.4,321.8 340.6,319.9 339.2,320.1 339.1,321.1 345.0,325.7 339.9,328.3 337.0,325.6 335.3,330.9 334.6,325.8 332.8,322.5 325.3,326.2 324.2,331.6 327.7,335.0 333.4,333.8 339.1,338.4 343.0,335.7 345.1,342.4 343.0,345.4 343.7,346.6 345.8,346.7Z"/><g class="ctxl"><text class="w small" x="704.1" y="342.9">оз. Балхаш</text><text class="w small" x="317" y="386">Аральское море</text></g></g>
+    </svg>
+    <div class="tip" id="tip" role="presentation"></div>
+  </div>
+
+  <div class="legend">
+    <div class="lsc" id="legScale"></div><span id="legUnit"></span>
+    <span class="src">Границы: Highcharts Map Collection, © OpenStreetMap; соседние страны и озёра: Natural Earth</span>
+  </div>
+
+  <aside class="card" id="card" aria-live="polite">
+    <h2 id="cName">Республика Казахстан</h2>
+    <p class="meta" id="cMeta">Всего по стране. Нажмите на область на карте.</p>
+    <ul class="stock" id="cStock"></ul>
+    <div class="pot">
+      <div class="lab" id="potLab">Биогазовый потенциал</div>
+      <div class="big"><strong id="pBiogas">0</strong><span id="pUnit">м³ в год</span></div>
+      <div class="line"><i class="dot power"></i>Электроэнергия: <b id="pElec">0</b></div>
+      <div class="line"><i class="dot heat"></i>Тепло: <b id="pHeat">0</b></div>
+      <div class="line" id="pShare">При сборе 50% навоза</div>
+    </div>
+    <button class="btn primary" type="button" id="toCalc">Посчитать энергию для страны</button>
+  </aside>
+</div>
+
+<section class="drawer wide" id="rating" role="dialog" aria-labelledby="rating-title" hidden>
+  <div class="dhead">
+    <h2 id="rating-title">Рейтинг областей по биогазовому потенциалу</h2>
+    <button class="x" type="button" id="closeRating" aria-label="Закрыть рейтинг"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+  </div>
+  <p class="lead">Рейтинг учитывает климат и выпас. Чем дольше скот стоит в стойлах, тем больше навоза можно собрать. Чем холоднее зима, тем больше тепла уходит на подогрев реактора. Лошади в Казахстане большую часть года пасутся, в том числе зимой на тебеневке, поэтому их навоз почти не собирается.</p>
+  <div class="chart">
+    <div class="ckey">
+      <span><i class="sw power" aria-hidden="true"></i>Электроэнергия</span>
+      <span><i class="sw heat" aria-hidden="true"></i>Тепло</span>
+      <span>вместе — полезная энергия с учётом климата и выпаса, ГВт·ч/год</span>
+      <span><i class="mk" aria-hidden="true"></i>То же без учёта климата</span>
+      <span>Число справа — на сколько мест область поднялась или опустилась из-за климата</span>
+    </div>
+    <ol class="bars" id="rBody"></ol>
+  </div>
+  <p class="rnote">Полезная энергия — электроэнергия и тепло после собственных нужд установки. Пастбищный период — по приказу Министра сельского хозяйства РК от 9 декабря 2024 г. № 394 (середина диапазона для основной природной зоны области), стойловый период — остаток года. Температура января — климатическая норма для областного центра, ориентировочно. Допущения о сборе навоза: КРС — 90% в стойловый период и 15% на пастбище, овцы и козы — 80% и 5%, лошади — 20% и 2%; свиньи и птица содержатся в помещениях, сбор — 90% и 80% круглый год. Доля тепла на подогрев реактора — 20% плюс 1,5% на каждый градус мороза в январе. «Без учёта климата» — всем областям 50% сбора навоза и 30% тепла на подогрев. Поголовье — из таблицы 2026 г.</p>
+</section>
+
+<div class="scrim" id="scrim"></div>
+<section class="drawer wide" id="howto" role="dialog" aria-labelledby="how-title" hidden>
+  <div class="dhead">
+    <h2 id="how-title">Как работает биогазовая установка</h2>
+    <button class="x" type="button" id="closeHow" aria-label="Закрыть"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+  </div>
+  <p class="lead">Навоз попадает в закрытый реактор, где бактерии без доступа воздуха превращают его в биогаз. Из биогаза мини-ТЭЦ делает электричество и тепло, а перебродивший навоз становится удобрением.</p>
+  <div class="ill-wrap">
+<svg id="proc" class="ill" viewBox="0 0 860 300" role="img" aria-labelledby="procTitle">
+  <title id="procTitle">Схема биогазовой установки: приём навоза, метантенк с подогревом и мешалкой, газгольдер, мини-ТЭЦ и хранилище дигестата</title>
+  <defs>
+    <linearGradient id="pSub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A6A3C"/><stop offset="1" stop-color="#5E4626"/></linearGradient>
+    <clipPath id="digClip"><path d="M240,118 Q375,40 510,118 L510,228 Q510,236 502,236 L248,236 Q240,236 240,228 Z"/></clipPath>
+  </defs>
+  <rect x="0" y="236" width="860" height="64" fill="#2E3B2E"/>
+  <line x1="0" y1="236" x2="860" y2="236" stroke="#4A5A45" stroke-width="2"/>
+
+  <!-- 1 приём -->
+  <g class="st s1">
+    <path d="M40,140 L140,140 L128,170 L52,170 Z" fill="#9AA7A6"/>
+    <rect x="52" y="170" width="76" height="66" rx="3" fill="#7E8B8A"/>
+    <rect x="58" y="196" width="64" height="36" fill="url(#pSub)"/>
+    <text class="it" x="90" y="128" text-anchor="middle">Приём навоза</text>
+  </g>
+  <path class="flow manure st s1 s2" d="M128,220 L240,220"/>
+
+  <!-- 2,3 метантенк -->
+  <g class="st s2 s3">
+    <path d="M240,118 Q375,40 510,118 L510,228 Q510,236 502,236 L248,236 Q240,236 240,228 Z" fill="#33424A" stroke="#9AA7A6" stroke-width="5"/>
+    <g clip-path="url(#digClip)">
+      <path d="M240,150 Q280,142 320,150 T400,150 T480,150 T560,150 L560,240 L240,240 Z" fill="url(#pSub)"><animate attributeName="d" dur="3.2s" repeatCount="indefinite" values="M240,150 Q280,142 320,150 T400,150 T480,150 T560,150 L560,240 L240,240 Z;M240,150 Q280,158 320,150 T400,150 T480,150 T560,150 L560,240 L240,240 Z;M240,150 Q280,142 320,150 T400,150 T480,150 T560,150 L560,240 L240,240 Z"/></path>
+      <g class="bubbles" id="bubbles"></g>
+    </g>
+    <text class="it" x="375" y="112" text-anchor="middle">Биогаз</text>
+    <text class="it soft" x="375" y="180" text-anchor="middle">Метантенк, без воздуха</text>
+  </g>
+  <g class="st s3">
+    <line x1="375" y1="66" x2="375" y2="200" stroke="#C9CFC8" stroke-width="4"/>
+    <g class="mixer"><rect class="pa" x="345" y="196" width="60" height="7" rx="3" fill="#D6DBD4"/><rect class="pb" x="345" y="196" width="60" height="7" rx="3" fill="#9FA79F"/></g>
+        <path d="M262,226 l12,-10 l12,10 l12,-10 l12,10 l12,-10 l12,10 M402,226 l12,-10 l12,10 l12,-10 l12,10 l12,-10 l12,10" class="coil" fill="none" stroke="#F08A5D" stroke-width="3" stroke-linejoin="round"/>
+    <text class="it heat" x="375" y="262" text-anchor="middle">Подогрев 35–38 °C</text>
+  </g>
+
+  <!-- 4 газгольдер -->
+  <path class="flow gas st s4" d="M375,64 L375,30 L612,30 L612,58"/>
+  <g class="st s4">
+    <path class="gh" d="M556,140 Q556,58 612,58 Q668,58 668,140 Z" fill="#5B79B0"/>
+    <rect x="552" y="138" width="120" height="8" rx="2" fill="#7E8B8A"/>
+    <text class="it" x="612" y="112" text-anchor="middle">Газгольдер</text>
+  </g>
+
+  <!-- 5 мини-ТЭЦ -->
+  <path class="flow gas st s5" d="M668,110 L720,110"/>
+  <g class="st s5">
+    <rect x="720" y="92" width="110" height="74" rx="4" fill="#C9C2AE"/>
+    <g class="smoke"><circle cx="806" cy="52" r="5"/><circle cx="806" cy="52" r="5"/><circle cx="806" cy="52" r="5"/></g>
+    <rect x="800" y="56" width="12" height="36" fill="#7A7F80"/>
+    <circle cx="752" cy="128" r="16" fill="#7A7F80"/><g class="rotor"><path d="M752,114 L752,142 M740,121 L764,135 M740,135 L764,121" stroke="#C9C2AE" stroke-width="3" stroke-linecap="round"/></g><circle cx="752" cy="128" r="4" fill="#C9C2AE"/>
+    <path class="bolt" d="M790,112 l-8,16 h8 l-6,16" fill="none" stroke="#F5C542" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <text class="it" x="758" y="84" text-anchor="middle">Мини-ТЭЦ</text>
+    <path class="flow power" d="M830,112 L856,112"/>
+  </g>
+  <path class="flow heat st s3 s5" d="M775,166 L775,276 L250,276 L250,226"/>
+
+  <!-- 6 дигестат -->
+  <path class="flow digest st s6" d="M510,220 L560,220 L560,206"/>
+  <g class="st s6">
+    <rect x="540" y="196" width="140" height="40" rx="3" fill="#7E8B8A"/>
+    <rect x="546" y="206" width="128" height="26" fill="#4E5E35"/>
+    <text class="it" x="610" y="190" text-anchor="middle">Дигестат</text>
+  </g>
+
+  <!-- номера шагов -->
+  <g class="badges">
+    <g data-s="1"><circle cx="40" cy="190" r="13"/><text x="40" y="195">1</text></g>
+    <g data-s="2"><circle cx="262" cy="96" r="13"/><text x="262" y="101">2</text></g>
+    <g data-s="3"><circle cx="232" cy="262" r="13"/><text x="232" y="267">3</text></g>
+    <g data-s="4"><circle cx="540" cy="84" r="13"/><text x="540" y="89">4</text></g>
+    <g data-s="5"><circle cx="842" cy="150" r="13"/><text x="842" y="155">5</text></g>
+    <g data-s="6"><circle cx="694" cy="216" r="13"/><text x="694" y="221">6</text></g>
+  </g>
+</svg>
+
+  </div>
+  <div class="stepbar"><button class="btn primary" type="button" id="playSteps" aria-pressed="false">Показать процесс по шагам</button></div>
+  <ol class="steps" id="steps"></ol>
+  <div class="stepinfo" id="stepInfo" aria-live="polite"></div>
+
+  <h3 class="sec">Макет села с биогазовой установкой</h3>
+  <p class="lead">Ферма отдаёт навоз установке, село получает свет и тепло, поля — удобрение. Модель можно вращать. Выберите поток, чтобы проследить его путь.</p>
+  <div class="chips flowchips" id="flowChips" role="group" aria-label="Какой поток показать"></div>
+  <div class="v3d-wrap">
+<div class="v3d" id="v3d">
+      <canvas id="v3dCanvas" aria-label="3D-модель села с биогазовой установкой"></canvas>
+      <div class="v3d-labels" id="v3dLabels" aria-hidden="true"></div>
+      <p class="v3d-hint" id="v3dHint">Вращайте модель мышью или пальцем, колесо или два пальца — приблизить</p>
+      <p class="v3d-fallback" id="v3dFallback" hidden>3D-модель не загрузилась. Проверьте подключение к интернету или откройте сайт в другом браузере.</p>
+    </div>
+
+  </div>
+  <p class="vnote" id="vNote"></p>
+  <div class="vstats" id="vStats"></div>
+  <button class="btn primary" type="button" id="villageToCalc">Посчитать это село в калькуляторе</button>
+</section>
+<section class="drawer" id="drawer" role="dialog" aria-labelledby="calc-title" hidden>
+  <div class="dhead">
+    <h2 id="calc-title">Калькулятор энергии</h2>
+    <button class="x" type="button" id="closeCalc" aria-label="Закрыть калькулятор"><svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+  </div>
+  <p class="lead">Введите поголовье хозяйства или выберите область на карте.</p>
+  <p class="from" id="fromNote"></p>
+  <div class="csum" aria-live="polite">
+    <div class="cs gas"><span class="cl"><i class="dot gas"></i>Биогаз</span><b id="sGas">0</b><small>м³ в сутки</small></div>
+    <div class="cs power"><span class="cl"><i class="dot power"></i>Хватит на</span><b id="sHomes">0</b><small id="sHomesU">домов</small></div>
+    <div class="cs verdict" id="sVerdict"><span class="cl">Окупаемость</span><b id="sPb">—</b><small id="sPbU">&nbsp;</small></div>
+  </div>
+
+  <fieldset class="herd" id="herd"><legend>Поголовье, голов</legend></fieldset>
+
+  <div class="share">
+    <div class="share-head"><label for="share">Доля навоза, которую удаётся собрать</label><output id="shareOut">50%</output></div>
+    <p>Летом скот на пастбище и навоз не собирается. При стойловом содержании ставьте 80–90%, при отгонном — 30–50%.</p>
+    <input type="range" id="share" min="5" max="100" step="1" value="50">
+  </div>
+
+  <div class="result">
+    <h3 class="rh">Что даёт установка за год</h3>
+    <dl class="out">
+      <dt><i class="dot gas"></i>Биогаз</dt><dd id="rBiogasYear">0</dd>
+      <dt><i class="dot gas"></i>Замена природного газа</dt><dd id="rGas">0</dd>
+      <dt><i class="dot power"></i>Электроэнергия</dt><dd id="rElec">0</dd>
+      <dt><i class="dot power"></i>Мощность генератора</dt><dd id="rPower">0</dd>
+      <dt><i class="dot power"></i>Электричества хватит на</dt><dd id="rHomes">0</dd>
+      <dt><i class="dot heat"></i>Полезное тепло</dt><dd id="rHeat">0</dd>
+      <dt><i class="dot digest"></i>Органическое удобрение</dt><dd id="rFert">0</dd>
+    </dl>
+    <div class="econ">
+      <h3>Экономика установки</h3>
+      <dl class="out">
+        <dt>Стоимость установки</dt><dd id="rCapex">0</dd>
+        <dt>Доход в год</dt><dd id="rRevenue">0</dd>
+        <dt>Эксплуатация в год</dt><dd id="rOpex">0</dd>
+      </dl>
+      <div class="payback" id="rPaybackBox"><b id="rPayback">—</b><span id="rPaybackNote">срок окупаемости</span></div>
+      <details>
+        <summary>Цены и затраты для расчёта</summary>
+        <div class="rows" id="prices"></div>
+      </details>
+      <details>
+        <summary>Как считается</summary>
+        <p>Биогаз = поголовье × выход на 1 голову в сутки × доля собранного навоза × 365. Биогаз с 60% метана даёт ≈6 кВт·ч на 1 м³. Когенерация: 35% в электричество (10% — на собственные нужды), 45% в тепло (30% — на подогрев реактора). Мощность — при 8 000 часах работы в год. Удобрение — 95% массы навоза. Дом — 2 400 кВт·ч в год.</p>
+        <p>Стоимость установки растёт медленнее мощности (эффект масштаба, показатель 0,7). При базовой цене 2,5 млн тг за 1 кВт у установки на 100 кВт, 1 кВт установки на 10 кВт стоит ≈5 млн тг, а на 1 МВт — ≈1,25 млн тг. Эксплуатация — 3% стоимости установки в год плюс постоянные расходы на персонал. Поэтому маленькие установки окупаются дольше крупных.</p>
+        <div class="tbl"><table><thead><tr><th>Вид</th><th>Навоз, кг/сут</th><th>Биогаз, м³/сут</th></tr></thead><tbody id="coefTable"></tbody></table></div>
+      </details>
+    </div>
+  </div>
+  <div class="dactions"><button class="btn" type="button" id="resetBtn">Вернуть пример фермы</button></div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ===== Поголовье, голов (из файла «Численность_скота.xlsx», 2026 г.) =====
+   Порядок: [КРС, овцы, козы, лошади, свиньи, птица]; null — прочерк в таблице */
+const STOCK = {"total":[5435563,14309999,836756,3301175,355123,41387497],"kz-10":[601796,935528,79545,374868,611,1357734],"kz-11":[244443,217786,8515,172432,10169,9172501],"kz-15":[426189,883967,53914,350692,711,808342],"kz-19":[431601,2398493,68732,190879,18197,8811397],"kz-23":[135883,315315,50450,98045,310,203380],"kz-27":[892277,979293,76294,294074,8866,871801],"kz-31":[236566,2266192,46604,106648,1905,1429676],"kz-33":[309379,1060137,91830,154997,10081,1379552],"kz-35":[383797,548932,101567,359536,50313,3187217],"kz-39":[251867,198351,19834,117969,22868,2381881],"kz-43":[161921,443558,23309,146756,68,16582],"kz-47":[13575,217255,48162,114767,95154,1384292],"kz-55":[373973,384319,41118,258002,124183,1570819],"kz-59":[201767,147744,1636,94702,null,3014321],"kz-61":[329895,2808629,59981,164002,null,1133058],"kz-62":[143371,177461,19353,137215,11303,78329],"kz-63":[280717,316028,45478,162207,null,3661053],"kz-71":[null,605,null,1,91,null],"kz-75":[null,null,null,null,293,20],"kz-79":[16546,10406,434,3383,null,925542]};
+const NAMES = {
+  "kz-10":["Область Абай","Семей","Абай"], "kz-11":["Акмолинская область","Кокшетау","Акмола"],
+  "kz-15":["Актюбинская область","Актобе","Актобе"], "kz-19":["Алматинская область","Конаев","Алматинская"],
+  "kz-23":["Атырауская область","Атырау","Атырау"], "kz-27":["Западно-Казахстанская область","Уральск","ЗКО"],
+  "kz-31":["Жамбылская область","Тараз","Жамбыл"], "kz-33":["Область Жетісу","Талдыкорган","Жетісу"],
+  "kz-35":["Карагандинская область","Караганда","Караганда"], "kz-39":["Костанайская область","Костанай","Костанай"],
+  "kz-43":["Кызылординская область","Кызылорда","Кызылорда"], "kz-47":["Мангистауская область","Актау","Мангистау"],
+  "kz-55":["Павлодарская область","Павлодар","Павлодар"], "kz-59":["Северо-Казахстанская область","Петропавловск","СКО"],
+  "kz-61":["Туркестанская область","Туркестан","Туркестан"], "kz-62":["Область Ұлытау","Жезказган","Ұлытау"],
+  "kz-63":["Восточно-Казахстанская область","Усть-Каменогорск","ВКО"],
+  "kz-71":["Город Астана","",""], "kz-75":["Город Алматы","",""], "kz-79":["Город Шымкент","",""]
+};
+const CITIES = ["kz-71","kz-75","kz-79"];
+
+/* Виды для калькулятора; idx — столбец в STOCK */
+const ANIMALS = [
+  {k:"krs",    name:"КРС",      hint:"коровы, быки, телята", manure:25,   gas:0.8,   idx:0},
+  {k:"sheep",  name:"Овцы",     hint:"",                     manure:4,    gas:0.10,  idx:1},
+  {k:"goats",  name:"Козы",     hint:"",                     manure:4,    gas:0.10,  idx:2},
+  {k:"horses", name:"Лошади",   hint:"",                     manure:15,   gas:1.0,   idx:3},
+  {k:"camels", name:"Верблюды", hint:"круглый год на пастбище", manure:12,   gas:0.6},
+  {k:"pigs",   name:"Свиньи",   hint:"",                     manure:4,    gas:0.3,   idx:4},
+  {k:"poultry",name:"Птица",    hint:"куры, утки, гуси",     manure:0.17, gas:0.012, idx:5}
+];
+const MAPPED = ANIMALS.filter(a=>a.idx!==undefined);
+const K = {kwhPerM3:6.0, elEff:0.35, elOwn:0.10, thEff:0.45, thOwn:0.30, hours:8000, gasEq:0.6, digest:0.95, home:2400, opex:0.03, gcal:1163, refKw:100, scale:0.7};
+const PRICES = [
+  {k:"tariff", label:"Тариф на электроэнергию", unit:"тг/кВт·ч", v:30},
+  {k:"heat",   label:"Цена тепла",               unit:"тг/Гкал",  v:9000},
+  {k:"fert",   label:"Цена удобрения",           unit:"тг/т",     v:1000},
+  {k:"capex",  label:"Стоимость 1 кВт (для установки 100 кВт)", unit:"тг", v:2500000},
+  {k:"fixed",  label:"Персонал и постоянные расходы", unit:"тг/год", v:2400000}
+];
+const FARM = {krs:200,sheep:500,goats:0,horses:50,camels:0,pigs:0,poultry:0};
+
+/* ===== Климат и выпас =====
+   [пастбищный период, дней (приказ МСХ РК № 394 от 09.12.2024); средняя температура января, °C] */
+const CLIMATE = {
+  "kz-10":[220,-14], "kz-11":[175,-14], "kz-15":[205,-13], "kz-19":[220,-7], "kz-23":[250,-7],
+  "kz-27":[190,-10], "kz-31":[260,-4],  "kz-33":[220,-9],  "kz-35":[185,-13],"kz-39":[175,-14],
+  "kz-43":[240,-7],  "kz-47":[280,-1],  "kz-55":[175,-16], "kz-59":[170,-16],"kz-61":[270,-3],
+  "kz-62":[185,-13], "kz-63":[220,-15],
+  "kz-71":[175,-14], "kz-75":[220,-5],  "kz-79":[270,-2]
+};
+/* доля собираемого навоза: [в стойловый период, на пастбище] */
+const COLLECT = {krs:[0.90,0.15], sheep:[0.80,0.05], goats:[0.80,0.05], horses:[0.20,0.02], pigs:[0.90,0.90], poultry:[0.80,0.80]};
+const stallDays = id => 365-CLIMATE[id][0];
+function regionShares(id){
+  const st=stallDays(id)/365, o={};
+  Object.entries(COLLECT).forEach(([k,[a,b]])=>o[k]=st*a+(1-st)*b);
+  return o;
+}
+const regionHeatOwn = id => Math.min(0.5, 0.20 + 0.015*Math.max(0,-CLIMATE[id][1]));
+const MAP = {"W":1000,"H":559.9,"f":{"kz-23":{"d":"M136.8,330.8 144.0,333.3 145.2,330.9 151.0,331.9 161.5,327.2 159.4,325.6 165.5,322.4 168.3,318.4 175.3,319.5 191.1,317.7 202.3,319.3 208.8,314.5 211.2,318.6 216.6,320.2 216.2,325.9 219.4,326.0 223.1,330.5 231.9,332.6 229.3,322.9 229.3,317.7 215.8,311.4 209.0,306.6 204.3,300.3 200.4,287.1 206.8,265.8 207.2,259.4 204.1,253.4 205.9,247.1 204.1,243.2 207.0,230.5 202.0,226.3 199.3,226.6 197.5,231.6 185.7,224.9 187.3,209.5 183.2,210.0 178.9,205.8 168.7,212.2 158.4,209.1 155.1,210.6 153.6,219.3 151.1,218.8 147.9,224.7 148.0,227.7 143.6,227.6 138.1,223.2 136.2,224.0 129.3,221.7 130.4,217.9 127.3,215.9 117.9,213.8 112.2,213.8 110.3,217.3 89.2,224.5 81.2,230.4 67.3,228.8 67.8,232.6 54.4,223.9 43.5,219.7 30.3,213.3 13.6,206.6 11.2,212.4 13.4,214.9 9.2,216.0 11.0,222.1 10.4,225.6 14.3,229.7 16.6,224.2 21.6,228.6 32.8,232.0 34.7,234.5 38.1,246.3 39.8,246.7 41.7,259.4 44.9,268.6 45.7,274.1 43.3,275.5 33.8,272.6 32.7,278.1 36.6,278.9 44.1,287.3 50.1,288.6 53.4,286.2 52.1,282.6 59.6,286.1 60.0,283.7 64.6,286.4 76.4,280.3 80.7,279.7 83.1,276.7 86.9,279.3 88.0,276.3 94.6,273.8 103.8,272.7 111.2,276.4 118.8,284.3 122.5,285.2 124.8,288.6 131.5,286.8 134.8,283.3 138.4,286.0 146.2,287.2 149.6,291.8 151.2,300.2 145.0,304.3 147.2,304.5 147.6,313.7 144.0,322.8 136.8,330.8ZM60.6,292.6 61.0,297.8 62.7,294.2 60.6,292.6Z","lx":131.1,"ly":260.5},"kz-27":{"d":"M13.6,206.6 30.3,213.3 43.5,219.7 54.4,223.9 67.8,232.6 67.3,228.8 81.2,230.4 89.2,224.5 110.3,217.3 112.2,213.8 117.9,213.8 127.3,215.9 130.4,217.9 129.3,221.7 136.2,224.0 138.1,223.2 143.6,227.6 148.0,227.7 147.9,224.7 151.1,218.8 153.6,219.3 155.1,210.6 158.4,209.1 168.7,212.2 178.9,205.8 182.0,197.3 185.5,193.1 196.5,195.5 199.2,194.2 206.8,180.8 203.9,176.8 204.9,172.4 203.6,168.3 209.2,161.3 206.6,157.3 210.6,150.0 203.5,143.5 203.2,138.2 200.9,135.6 193.1,131.9 193.2,125.5 188.3,120.9 177.0,119.3 176.9,118.1 168.9,118.7 165.7,107.0 162.2,106.7 159.5,109.0 155.2,107.2 151.7,110.3 152.0,113.7 148.0,114.8 147.6,110.7 143.1,112.7 139.9,111.6 139.4,108.6 142.5,109.2 143.1,106.4 132.3,102.6 130.2,98.6 129.7,105.7 125.0,102.3 122.7,108.8 118.3,109.3 117.6,112.8 109.3,114.1 102.0,118.0 94.8,115.6 90.9,120.1 91.6,125.6 84.2,126.4 80.6,129.5 75.4,131.6 71.6,130.5 69.8,149.5 72.3,153.2 67.7,156.0 57.8,157.3 54.0,149.6 50.0,135.7 46.2,129.4 37.4,133.4 35.3,137.2 36.7,141.4 31.1,146.1 23.9,147.0 15.9,165.3 19.9,170.6 19.3,176.0 12.0,179.5 0.0,196.5 13.6,206.6Z","lx":111.6,"ly":170.3},"kz-15":{"d":"M178.9,205.8 183.2,210.0 187.3,209.5 185.7,224.9 197.5,231.6 199.3,226.6 202.0,226.3 207.0,230.5 204.1,243.2 205.9,247.1 204.1,253.4 207.2,259.4 206.8,265.8 200.4,287.1 204.3,300.3 209.0,306.6 215.8,311.4 229.3,317.7 229.3,322.9 231.9,332.6 234.4,340.8 234.2,369.3 284.6,359.7 296.9,371.2 297.8,345.4 300.1,343.9 313.4,328.2 319.4,322.6 329.5,314.8 338.3,314.9 339.6,307.0 350.4,308.4 362.3,283.5 363.5,282.5 377.8,283.2 381.4,287.4 384.4,294.3 387.4,295.0 393.9,303.1 393.1,306.3 402.4,308.8 409.7,302.7 420.9,297.4 430.4,290.7 437.2,283.5 433.4,279.5 431.1,273.1 425.4,262.1 416.8,256.1 408.5,252.7 410.2,245.9 407.6,243.3 403.1,246.1 396.2,239.3 394.0,232.4 396.6,230.4 391.3,220.9 395.0,218.0 394.9,214.1 397.9,212.3 399.2,207.5 402.8,204.8 406.5,207.2 408.1,203.0 405.6,197.7 404.1,195.2 403.0,193.5 399.4,186.6 397.2,176.1 393.0,177.7 392.4,171.1 397.3,170.0 392.5,163.6 394.4,161.2 390.9,158.7 387.6,160.4 384.8,151.6 380.9,153.7 377.9,154.1 374.0,170.2 358.3,174.6 346.8,173.2 344.2,166.5 340.0,166.8 339.1,172.3 334.2,177.1 326.8,178.0 326.6,172.4 312.5,168.7 310.6,164.1 306.6,161.6 308.2,157.3 305.6,153.3 302.4,153.4 301.4,149.9 297.3,153.3 295.7,150.8 292.2,151.7 288.4,149.3 287.2,157.5 282.4,156.3 280.9,158.4 276.9,155.4 274.5,148.4 267.2,149.6 262.9,148.5 263.6,152.0 260.6,151.3 258.5,147.5 254.0,153.9 250.0,151.9 248.0,158.6 240.0,162.5 237.4,164.9 229.7,159.7 222.9,152.4 225.2,149.8 219.7,148.1 216.6,143.5 213.6,143.2 212.0,147.0 213.6,150.7 214.1,158.7 209.2,161.3 203.6,168.3 204.9,172.4 203.9,176.8 206.8,180.8 199.2,194.2 196.5,195.5 185.5,193.1 182.0,197.3 178.9,205.8Z","lx":297.1,"ly":247.2},"kz-47":{"d":"M234.2,369.3 234.4,340.8 231.9,332.6 223.1,330.5 219.4,326.0 216.2,325.9 216.6,320.2 211.2,318.6 208.8,314.5 202.3,319.3 191.1,317.7 175.3,319.5 168.3,318.4 165.5,322.4 159.4,325.6 161.5,327.2 151.0,331.9 145.2,330.9 144.0,333.3 136.8,330.8 132.6,335.3 131.6,339.4 143.5,349.0 134.6,348.1 126.3,343.2 110.2,341.2 106.2,339.1 97.9,340.1 96.3,337.7 88.1,348.5 81.8,351.9 80.6,355.3 86.5,361.5 87.7,366.5 91.0,366.6 92.8,370.9 86.8,367.9 84.5,369.5 79.6,367.8 76.8,363.2 66.4,360.8 61.8,358.4 59.3,360.7 57.5,367.9 59.8,371.5 68.7,375.2 72.1,378.8 71.1,384.4 73.6,389.6 75.1,399.8 78.6,404.5 78.9,409.0 75.5,419.4 85.9,420.1 88.9,431.6 90.9,434.8 97.7,434.1 100.6,438.4 102.5,437.2 109.3,440.6 111.8,444.0 105.2,457.0 98.4,464.7 99.6,470.7 97.0,477.4 114.7,466.7 132.0,463.4 150.4,463.1 163.9,477.8 167.8,484.0 167.4,486.7 170.8,496.1 177.1,508.4 179.4,510.6 190.5,509.2 193.9,510.0 213.7,373.2 234.2,369.3ZM126.4,340.3 129.1,343.9 129.8,339.9 126.4,340.3Z","lx":154.4,"ly":398.1},"kz-63":{"d":"M901.8,215.8 901.9,215.8 901.8,215.8 901.9,215.8 905.2,213.1 906.6,216.3 912.1,217.5 917.9,221.3 914.6,228.1 906.0,240.5 907.1,247.2 915.6,257.3 915.9,266.7 927.3,270.7 942.3,271.0 943.8,269.3 957.8,265.9 963.6,270.1 968.8,261.5 976.8,259.7 978.9,252.4 976.6,244.3 974.3,241.1 968.3,224.4 967.4,219.9 969.9,208.7 981.0,204.7 988.8,198.3 991.4,190.4 991.2,185.5 988.0,180.1 990.1,175.1 1000.0,172.5 999.4,168.7 992.6,169.7 986.8,164.1 984.7,160.3 979.6,160.7 982.2,155.1 981.3,151.5 976.6,152.2 977.2,155.3 973.5,161.3 971.6,161.9 970.7,167.0 968.1,165.4 965.0,167.7 962.2,165.3 957.6,167.1 954.8,165.3 945.8,167.0 943.0,162.2 937.3,156.3 937.5,152.2 933.3,151.9 926.9,148.8 920.7,150.3 913.3,138.7 902.8,128.4 891.7,125.7 885.3,128.9 882.9,132.6 876.8,132.2 877.6,135.1 874.3,139.7 869.2,139.2 866.5,141.6 858.0,140.8 851.5,144.3 856.7,152.5 855.8,161.8 848.9,161.0 850.1,164.1 845.6,164.3 844.7,168.0 850.7,168.2 850.9,174.3 859.7,175.9 860.9,181.8 864.8,184.9 872.1,187.6 873.1,191.4 884.1,192.2 887.8,196.0 888.2,196.0 890.9,202.5 896.9,205.9 894.8,208.7 895.0,208.9 895.2,209.2 895.4,209.6 895.3,209.6 895.3,209.8 898.2,211.6 904.1,210.0 901.5,215.8 901.6,215.8 901.6,215.7 901.7,215.8 901.8,215.8Z","lx":926.2,"ly":195.3},"kz-19":{"d":"M749.6,457.7 759.8,456.8 764.5,458.9 768.3,456.3 774.1,456.1 777.1,452.7 786.0,451.9 791.7,454.0 797.5,451.8 808.9,453.4 819.4,451.7 823.2,449.4 829.4,451.3 838.5,452.3 842.9,450.0 842.6,453.1 854.0,461.4 866.3,460.2 873.4,467.5 876.3,465.2 872.6,457.8 874.1,456.2 870.3,452.0 872.2,443.9 880.5,440.3 873.7,435.6 878.6,431.2 883.9,430.2 882.7,423.8 880.0,423.7 881.0,418.3 872.4,406.1 871.7,407.8 863.9,409.9 855.1,409.1 850.3,405.9 844.9,404.9 835.3,412.1 831.5,411.8 821.5,414.5 810.4,413.4 800.4,416.6 798.0,414.2 799.1,410.5 785.4,407.0 785.2,400.2 780.6,400.6 779.2,396.9 772.1,393.1 768.9,386.5 769.1,381.7 764.5,376.7 760.2,377.0 756.8,367.6 750.3,362.3 747.4,356.2 747.2,352.1 743.6,325.1 743.9,318.0 738.9,314.8 720.7,319.0 713.2,324.6 706.2,326.5 692.7,342.5 690.4,347.9 687.2,357.8 692.2,374.8 684.8,375.4 685.5,382.3 694.2,380.7 696.2,388.6 703.7,392.1 707.3,395.6 708.0,403.6 714.7,407.8 719.9,407.8 730.5,414.1 730.7,426.3 724.1,433.6 729.6,437.1 735.2,436.8 736.3,439.1 733.2,443.0 733.9,449.1 737.2,452.1 744.5,454.4 741.8,457.0 749.6,457.7ZM776.5,439.1 776.6,439.1 776.5,439.1 776.6,439.1 776.6,439.1 776.6,439.2 776.6,439.1 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.3 776.6,439.2 776.6,439.3 776.7,439.4 776.7,439.5 776.7,439.4 776.7,439.5 776.7,439.5 776.6,439.6 778.0,437.6 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 779.0,437.2 779.0,437.1 779.1,437.1 779.1,436.8 779.2,436.5 779.3,436.5 780.6,440.9 781.9,442.9 783.3,445.2 783.5,449.9 781.1,449.9 774.8,446.2 774.9,446.2 774.8,446.2 774.9,446.2 775.0,446.2 774.6,444.8 774.4,442.9 774.4,442.9 774.4,442.9 774.4,442.9 774.7,442.8 774.5,442.3 773.3,440.5 776.5,439.0 776.5,439.1ZM783.7,437.4 783.7,437.4 784.5,438.0 783.7,437.4Z","lx":744,"ly":418},"kz-31":{"d":"M560.0,355.7 565.5,364.3 568.3,374.5 571.2,380.4 575.2,394.7 576.8,397.2 582.4,424.4 579.4,429.5 579.0,439.5 575.9,447.4 572.7,452.2 575.7,452.8 575.5,456.7 583.2,459.5 584.3,458.0 592.8,464.2 596.0,472.2 594.9,477.1 599.9,479.3 611.2,487.6 614.1,492.3 616.9,485.5 619.9,485.9 617.3,482.1 622.2,481.0 622.1,478.6 627.8,473.6 634.6,474.4 639.5,471.6 647.1,474.4 652.5,473.5 665.6,477.1 670.2,480.6 681.7,480.6 682.0,483.3 687.8,483.5 685.1,480.1 684.4,475.4 686.2,470.5 686.8,460.6 694.0,456.3 697.6,452.4 699.7,454.1 704.5,452.4 703.8,450.1 714.6,454.1 719.8,459.1 722.3,458.3 733.4,462.7 747.3,463.4 749.6,457.7 741.8,457.0 744.5,454.4 737.2,452.1 733.9,449.1 733.2,443.0 736.3,439.1 735.2,436.8 729.6,437.1 724.1,433.6 730.7,426.3 730.5,414.1 719.9,407.8 714.7,407.8 708.0,403.6 707.3,395.6 703.7,392.1 696.2,388.6 694.2,380.7 685.5,382.3 684.8,375.4 692.2,374.8 687.2,357.8 690.4,347.9 619.1,353.0 560.0,355.7Z","lx":622,"ly":405},"kz-43":{"d":"M296.9,371.2 334.0,400.5 346.1,411.7 347.6,417.3 354.7,426.4 369.2,446.0 375.7,445.9 406.3,442.7 420.0,445.2 438.5,446.9 449.5,441.1 451.4,441.9 456.2,450.3 465.6,457.3 473.9,474.6 481.0,471.7 480.0,494.2 482.1,494.8 512.2,471.3 528.7,462.7 527.5,456.8 523.8,455.2 528.9,445.3 528.4,441.4 531.4,442.8 531.0,436.4 534.7,430.7 527.8,425.5 525.7,421.5 518.4,418.0 519.7,415.5 520.1,406.3 519.7,388.5 510.6,382.8 512.3,379.2 512.4,372.9 515.5,365.6 510.5,358.9 510.5,356.4 509.5,351.1 477.1,349.5 469.1,348.1 463.6,344.2 457.8,337.9 452.6,336.8 440.1,329.4 424.8,323.2 422.0,323.3 408.7,315.1 413.9,312.3 402.4,308.8 393.1,306.3 393.9,303.1 387.4,295.0 384.4,294.3 381.4,287.4 377.8,283.2 363.5,282.5 362.3,283.5 350.4,308.4 339.6,307.0 338.3,314.9 329.5,314.8 319.4,322.6 313.4,328.2 300.1,343.9 297.8,345.4 296.9,371.2Z","lx":417.7,"ly":384.9},"kz-61":{"d":"M614.1,492.3 611.2,487.6 599.9,479.3 594.9,477.1 596.0,472.2 592.8,464.2 584.3,458.0 583.2,459.5 575.5,456.7 575.7,452.8 572.7,452.2 575.9,447.4 579.0,439.5 579.4,429.5 582.4,424.4 576.8,397.2 575.2,394.7 571.2,380.4 568.3,374.5 565.5,364.3 560.0,355.7 510.5,356.4 510.5,358.9 515.5,365.6 512.4,372.9 512.3,379.2 510.6,382.8 519.7,388.5 520.1,406.3 519.7,415.5 518.4,418.0 525.7,421.5 527.8,425.5 534.7,430.7 531.0,436.4 531.4,442.8 528.4,441.4 528.9,445.3 523.8,455.2 527.5,456.8 528.7,462.7 512.2,471.3 482.1,494.8 480.0,494.2 478.0,493.3 477.8,509.3 492.8,511.7 494.8,526.0 497.7,539.2 516.4,539.8 526.9,537.7 533.6,538.8 534.1,543.5 538.2,543.2 533.9,549.6 540.9,555.9 549.2,559.9 553.7,558.6 551.5,555.1 551.3,546.9 549.0,544.2 552.0,543.0 553.1,546.3 557.5,539.6 563.8,535.4 564.2,530.7 569.9,526.2 578.2,522.0 580.0,518.5 589.5,515.4 599.8,505.9 599.3,503.6 603.5,500.7 608.1,503.9 612.2,496.6 614.9,496.3 614.1,492.3ZM573.1,490.2 573.1,490.2 573.1,490.2 573.1,490.2 574.7,488.0 581.8,489.3 584.0,491.9 584.3,492.1 584.7,492.6 584.7,492.6 585.8,493.0 586.7,493.9 587.5,494.3 587.9,494.7 588.0,494.6 587.9,494.7 588.0,494.6 585.7,495.6 585.2,495.6 585.1,498.1 585.0,498.4 583.2,497.0 578.0,500.9 577.3,501.2 574.0,499.7 570.5,492.8 570.5,492.8 570.5,492.8 570.5,492.8 572.7,491.0 573.1,490.2Z","lx":528,"ly":452},"kz-11":{"d":"M528.4,184.4 527.9,180.5 533.3,181.8 541.9,174.7 548.8,174.7 548.8,183.8 547.6,193.5 546.2,195.7 553.3,198.1 557.9,197.9 558.6,194.8 561.4,195.3 560.4,191.1 562.9,189.9 568.5,193.7 571.0,197.1 579.8,194.2 582.4,196.3 581.4,202.2 589.0,199.9 591.5,197.8 589.6,194.6 593.2,192.5 596.2,193.8 596.3,186.5 603.2,183.7 604.5,179.8 609.3,177.9 609.2,175.2 616.6,172.3 621.3,176.0 618.9,185.7 626.0,183.8 628.8,185.8 629.6,180.9 631.8,178.6 636.8,177.8 634.7,175.3 636.8,172.6 640.7,172.1 643.4,166.7 648.0,167.4 652.2,164.7 652.1,162.0 657.7,160.1 661.2,156.3 657.8,154.5 655.2,156.9 650.9,151.3 659.7,149.5 662.9,150.3 665.7,144.0 669.6,141.3 675.9,139.9 669.6,135.9 664.3,137.0 664.8,130.6 668.5,125.1 666.4,102.1 664.4,100.4 655.4,100.8 654.4,98.5 644.4,96.2 641.0,97.8 640.8,89.9 639.1,86.1 629.7,88.6 624.0,87.7 624.4,92.3 617.9,94.2 612.1,91.1 610.5,87.5 613.0,86.1 613.1,80.9 608.9,73.3 601.8,78.1 596.4,77.4 597.4,73.9 586.6,74.2 586.8,77.8 583.7,78.4 584.0,81.7 580.9,82.0 578.8,76.9 573.8,77.4 575.0,71.8 569.8,71.5 568.7,66.0 563.0,65.7 557.7,72.3 553.8,66.1 551.4,68.5 544.7,67.6 539.3,74.6 541.6,81.6 544.5,81.8 546.4,88.4 543.0,92.5 544.2,99.5 538.0,102.7 536.6,106.8 528.6,109.3 530.1,112.4 525.8,119.5 518.3,113.8 512.8,113.8 512.8,122.1 508.2,120.2 495.4,119.3 495.4,116.0 488.4,117.3 484.8,112.8 483.1,113.4 482.8,122.0 479.8,124.4 477.1,134.5 471.6,137.1 467.5,137.4 468.2,141.4 472.7,143.6 469.8,150.7 471.8,152.1 468.0,154.9 468.8,159.6 473.6,164.3 472.8,173.7 477.2,172.9 479.0,168.8 481.7,169.2 485.3,175.5 487.9,174.1 489.6,179.5 492.5,178.5 499.4,182.3 505.7,180.6 508.6,181.9 507.6,185.3 509.1,190.9 519.5,186.8 526.0,186.4 528.4,184.4ZM606.8,157.9 606.8,157.9 606.8,157.9 606.8,157.9 606.7,157.7 606.6,157.6 605.9,157.0 608.5,153.5 613.2,155.3 615.7,159.0 613.4,164.1 607.4,163.9 606.9,158.0 606.8,157.9Z","lx":573.3,"ly":136.5},"kz-59":{"d":"M483.1,113.4 484.8,112.8 488.4,117.3 495.4,116.0 495.4,119.3 508.2,120.2 512.8,122.1 512.8,113.8 518.3,113.8 525.8,119.5 530.1,112.4 528.6,109.3 536.6,106.8 538.0,102.7 544.2,99.5 543.0,92.5 546.4,88.4 544.5,81.8 541.6,81.6 539.3,74.6 544.7,67.6 551.4,68.5 553.8,66.1 557.7,72.3 563.0,65.7 568.7,66.0 569.8,71.5 575.0,71.8 573.8,77.4 578.8,76.9 580.9,82.0 584.0,81.7 583.7,78.4 586.8,77.8 586.6,74.2 597.4,73.9 596.4,77.4 601.8,78.1 608.9,73.3 613.1,80.9 613.0,86.1 610.5,87.5 612.1,91.1 617.9,94.2 624.4,92.3 624.0,87.7 629.7,88.6 639.1,86.1 640.8,89.9 641.0,97.8 644.4,96.2 654.4,98.5 655.4,100.8 664.4,100.4 658.3,97.2 664.2,98.2 663.7,94.1 666.2,91.2 664.8,87.7 660.1,92.6 657.0,92.7 657.5,88.2 654.5,88.1 659.2,79.2 656.3,77.9 651.6,81.5 650.9,75.2 654.5,76.0 650.7,69.8 649.5,66.6 645.8,65.2 647.5,56.7 649.6,53.3 655.0,53.6 656.0,45.9 652.9,45.6 650.6,50.8 640.7,49.9 638.8,45.7 630.2,44.9 628.7,48.5 632.0,48.2 633.0,51.7 629.1,51.0 628.1,54.0 625.4,52.5 627.9,45.0 623.2,43.5 623.9,41.3 620.3,37.4 618.3,42.7 620.8,46.2 615.3,41.9 610.9,41.8 610.6,47.4 605.4,47.9 605.4,45.8 601.0,45.0 598.6,48.5 594.1,39.7 598.6,40.4 599.1,36.8 597.4,31.1 599.9,26.9 595.5,25.9 592.1,19.1 592.6,12.1 587.7,4.2 581.1,5.1 575.9,10.1 569.8,8.0 564.3,2.9 553.4,4.0 552.5,1.8 547.5,0.0 549.2,5.7 543.6,2.4 540.5,8.5 531.4,9.4 534.4,14.3 532.8,18.0 523.8,18.0 522.8,21.3 518.2,22.9 513.2,21.8 512.1,23.6 501.2,25.7 485.7,30.5 485.8,38.8 487.8,43.5 484.6,45.0 489.7,47.7 490.8,50.7 482.9,54.5 484.7,61.9 487.6,61.8 486.0,73.2 489.1,73.2 489.1,84.9 492.4,88.8 487.8,87.9 484.4,89.8 484.8,92.8 490.5,93.3 490.2,96.5 485.9,96.1 486.1,101.0 483.6,101.1 483.1,113.4Z","lx":556.4,"ly":59.2},"kz-55":{"d":"M664.4,100.4 666.4,102.1 668.5,125.1 664.8,130.6 664.3,137.0 669.6,135.9 675.9,139.9 669.6,141.3 665.7,144.0 662.9,150.3 671.7,152.4 671.6,161.9 674.1,161.8 673.7,165.9 669.8,171.7 672.9,174.7 682.3,171.9 687.9,173.4 688.9,178.7 691.3,175.4 696.7,179.9 697.2,183.0 701.5,185.4 694.0,191.8 695.3,194.1 699.3,194.1 706.4,188.0 718.7,185.4 722.9,182.9 727.4,184.0 729.4,179.4 734.3,178.7 737.5,180.5 739.1,168.2 745.8,164.4 750.4,167.6 755.2,167.6 760.3,170.1 760.2,177.3 762.8,179.1 780.4,183.6 785.4,180.3 788.3,171.9 787.1,167.2 784.7,166.8 783.5,158.0 779.9,159.1 777.3,153.3 773.0,152.4 767.0,143.5 771.9,140.0 782.5,135.1 780.6,129.7 786.2,128.7 788.5,125.5 787.2,123.3 793.1,117.7 788.1,110.3 761.4,76.3 751.4,63.8 734.7,52.6 717.4,41.5 714.5,35.5 719.2,36.5 721.5,34.8 723.5,29.2 721.0,26.7 723.8,23.3 719.7,25.3 718.8,28.2 714.6,29.8 709.6,28.8 708.9,32.7 696.2,40.2 691.5,41.8 693.3,45.4 685.3,53.0 679.5,52.3 676.7,58.6 672.6,58.1 673.7,62.4 672.0,67.0 669.3,63.4 660.3,60.8 658.8,63.7 655.2,62.7 655.0,65.0 650.7,69.8 654.5,76.0 650.9,75.2 651.6,81.5 656.3,77.9 659.2,79.2 654.5,88.1 657.5,88.2 657.0,92.7 660.1,92.6 664.8,87.7 666.2,91.2 663.7,94.1 664.2,98.2 658.3,97.2 664.4,100.4Z","lx":720.0,"ly":114.9},"kz-35":{"d":"M515.6,208.6 522.1,216.7 523.9,222.2 527.6,227.1 528.4,235.2 539.5,237.3 548.4,247.8 553.2,250.3 559.4,250.0 566.2,255.7 574.7,252.6 576.0,249.5 590.8,246.6 593.4,235.9 592.9,226.4 598.3,227.1 599.7,231.0 604.4,234.1 619.9,230.7 620.8,233.5 627.4,232.8 629.0,240.3 631.9,241.7 632.7,248.8 630.1,250.0 630.6,257.7 629.8,263.8 627.1,265.0 630.6,270.6 630.5,274.9 635.4,284.2 627.1,288.4 625.8,295.4 622.2,294.7 617.0,290.8 615.6,300.7 618.1,326.1 616.9,334.3 618.5,340.9 619.1,353.0 690.4,347.9 692.7,342.5 706.2,326.5 713.2,324.6 720.7,319.0 738.9,314.8 743.9,318.0 747.3,315.6 752.1,318.7 753.5,315.8 762.8,318.9 760.6,316.2 765.7,315.8 767.0,318.6 771.0,318.2 772.5,315.3 778.1,314.2 773.0,294.4 767.0,294.8 766.0,298.6 758.1,295.9 756.4,292.5 756.6,286.8 761.4,287.0 758.1,276.9 760.7,269.8 761.2,263.3 765.1,260.8 760.6,260.1 756.6,254.2 751.3,251.3 753.6,245.9 758.6,245.6 761.8,239.9 760.0,231.6 750.4,234.2 748.0,227.1 752.5,225.1 750.2,223.0 750.1,222.9 749.0,222.5 748.4,222.5 747.9,222.4 746.7,219.3 741.5,217.0 740.5,214.8 740.2,214.3 740.0,213.5 739.7,213.3 739.7,213.3 739.5,212.5 739.7,211.8 750.4,206.2 752.8,201.0 751.6,191.8 757.8,187.4 762.7,181.4 762.8,179.1 760.2,177.3 760.3,170.1 755.2,167.6 750.4,167.6 745.8,164.4 739.1,168.2 737.5,180.5 734.3,178.7 729.4,179.4 727.4,184.0 722.9,182.9 718.7,185.4 706.4,188.0 699.3,194.1 695.3,194.1 694.0,191.8 701.5,185.4 697.2,183.0 696.7,179.9 691.3,175.4 688.9,178.7 687.9,173.4 682.3,171.9 672.9,174.7 669.8,171.7 673.7,165.9 674.1,161.8 671.6,161.9 671.7,152.4 662.9,150.3 659.7,149.5 650.9,151.3 655.2,156.9 657.8,154.5 661.2,156.3 657.7,160.1 652.1,162.0 652.2,164.7 648.0,167.4 643.4,166.7 640.7,172.1 636.8,172.6 634.7,175.3 636.8,177.8 631.8,178.6 629.6,180.9 628.8,185.8 626.0,183.8 618.9,185.7 621.3,176.0 616.6,172.3 609.2,175.2 609.3,177.9 604.5,179.8 603.2,183.7 596.3,186.5 596.2,193.8 593.2,192.5 589.6,194.6 591.5,197.8 589.0,199.9 581.4,202.2 582.4,196.3 579.8,194.2 571.0,197.1 568.5,193.7 562.9,189.9 560.4,191.1 561.4,195.3 558.6,194.8 557.9,197.9 553.3,198.1 546.2,195.7 547.6,193.5 548.8,183.8 548.8,174.7 541.9,174.7 533.3,181.8 527.9,180.5 528.4,184.4 532.1,187.7 529.2,193.3 521.1,196.4 521.4,200.8 515.6,208.6Z","lx":664.6,"ly":249.1},"kz-39":{"d":"M380.9,153.7 384.8,151.6 387.6,160.4 390.9,158.7 394.4,161.2 392.5,163.6 397.3,170.0 392.4,171.1 393.0,177.7 397.2,176.1 399.4,186.6 403.0,193.5 404.1,195.2 405.6,197.7 408.1,203.0 406.5,207.2 402.8,204.8 399.2,207.5 397.9,212.3 394.9,214.1 395.0,218.0 391.3,220.9 396.6,230.4 394.0,232.4 396.2,239.3 403.1,246.1 407.6,243.3 410.2,245.9 408.5,252.7 416.8,256.1 425.4,262.1 431.1,273.1 438.0,266.6 436.8,262.2 445.6,260.7 443.0,254.4 448.8,254.5 450.2,244.7 468.5,249.3 475.1,247.2 475.7,243.6 483.1,243.3 491.5,234.0 494.7,232.9 497.4,225.9 502.0,221.3 507.0,218.7 515.0,207.7 515.6,208.6 521.4,200.8 521.1,196.4 529.2,193.3 532.1,187.7 528.4,184.4 526.0,186.4 519.5,186.8 509.1,190.9 507.6,185.3 508.6,181.9 505.7,180.6 499.4,182.3 492.5,178.5 489.6,179.5 487.9,174.1 485.3,175.5 481.7,169.2 479.0,168.8 477.2,172.9 472.8,173.7 473.6,164.3 468.8,159.6 468.0,154.9 471.8,152.1 469.8,150.7 472.7,143.6 468.2,141.4 467.5,137.4 471.6,137.1 477.1,134.5 479.8,124.4 482.8,122.0 483.1,113.4 483.6,101.1 486.1,101.0 485.9,96.1 490.2,96.5 490.5,93.3 484.8,92.8 484.4,89.8 487.8,87.9 492.4,88.8 489.1,84.9 489.1,73.2 486.0,73.2 487.6,61.8 484.7,61.9 482.9,54.5 490.8,50.7 489.7,47.7 484.6,45.0 487.8,43.5 485.8,38.8 485.7,30.5 483.7,27.5 480.7,28.3 478.5,31.6 472.9,29.7 473.1,32.9 466.7,33.8 467.6,40.6 464.1,41.5 461.3,38.1 456.1,40.6 453.3,39.0 444.0,41.8 439.3,42.0 437.6,45.8 435.6,43.2 425.3,45.6 421.0,45.3 420.7,47.9 413.0,47.8 408.2,49.0 406.0,55.0 403.7,51.4 405.9,50.4 395.1,49.7 395.7,53.0 391.6,52.2 388.9,49.5 386.2,51.6 383.6,47.1 379.4,47.1 378.7,52.5 375.5,53.2 377.2,57.4 372.6,62.5 375.9,66.0 383.9,65.6 384.6,68.2 380.7,70.5 378.5,68.0 374.4,71.9 375.7,76.7 382.3,79.7 385.7,78.1 388.0,81.3 395.4,84.5 395.3,89.1 391.4,90.4 389.0,88.2 384.0,89.7 380.5,86.4 375.6,86.0 369.9,87.7 371.3,89.8 365.3,95.1 362.5,95.2 362.9,100.3 365.1,100.1 364.8,104.6 367.9,105.4 369.3,111.5 362.4,115.5 360.7,118.1 356.0,117.7 348.2,123.2 343.7,122.8 353.0,131.0 350.8,134.9 354.9,138.0 364.2,138.8 365.2,144.5 376.9,147.7 380.9,153.7Z","lx":436.7,"ly":145.4},"kz-75":{"d":"M774.4,442.9 774.4,442.9 774.4,442.9 774.4,442.9 774.6,444.8 775.0,446.2 774.9,446.2 774.8,446.2 774.9,446.2 774.8,446.2 781.1,449.9 783.5,449.9 783.3,445.2 781.9,442.9 780.6,440.9 779.3,436.5 779.2,436.5 779.1,436.8 779.1,437.1 779.0,437.1 779.0,437.2 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.8,437.4 778.0,437.6 776.6,439.6 776.7,439.5 776.7,439.5 776.7,439.4 776.7,439.5 776.7,439.4 776.6,439.3 776.6,439.2 776.6,439.3 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.2 776.6,439.1 776.6,439.2 776.6,439.1 776.6,439.1 776.5,439.1 776.6,439.1 776.5,439.1 776.5,439.0 773.3,440.5 774.5,442.3 774.7,442.8 774.4,442.9ZM783.7,437.4 784.5,438.0 783.7,437.4 783.7,437.4Z","lx":778.8,"ly":444.0},"kz-71":{"d":"M606.8,157.9 606.8,157.9 606.8,157.9 606.8,157.9 606.9,158.0 607.4,163.9 613.4,164.1 615.7,159.0 613.2,155.3 608.5,153.5 605.9,157.0 606.6,157.6 606.7,157.7 606.8,157.9Z","lx":610.7,"ly":159.2},"kz-79":{"d":"M570.5,492.8 570.5,492.8 570.5,492.8 570.5,492.8 574.0,499.7 577.3,501.2 578.0,500.9 583.2,497.0 585.0,498.4 585.1,498.1 585.2,495.6 585.7,495.6 588.0,494.6 587.9,494.7 588.0,494.6 587.9,494.7 587.5,494.3 586.7,493.9 585.8,493.0 584.7,492.6 584.7,492.6 584.3,492.1 584.0,491.9 581.8,489.3 574.7,488.0 573.1,490.2 573.1,490.2 573.1,490.2 573.1,490.2 572.7,491.0 570.5,492.8Z","lx":578.3,"ly":494.3},"kz-10":{"d":"M773.0,294.4 776.2,292.4 781.4,292.7 784.5,289.2 788.4,291.9 791.1,287.2 798.8,290.8 803.3,291.2 804.7,293.8 815.8,290.9 826.0,300.5 836.8,295.6 838.9,293.7 843.8,294.6 845.5,297.5 862.9,302.8 870.0,301.6 877.8,304.8 881.1,302.4 881.5,306.9 892.2,314.9 896.3,322.7 900.9,326.4 903.2,333.6 906.6,333.9 905.5,331.0 906.4,324.0 905.0,318.7 907.8,316.7 908.0,309.8 910.8,296.2 910.9,288.1 912.7,267.9 915.9,266.7 915.6,257.3 907.1,247.2 906.0,240.5 914.6,228.1 917.9,221.3 912.1,217.5 906.6,216.3 905.2,213.1 901.9,215.8 901.8,215.8 901.9,215.8 901.8,215.8 901.7,215.8 901.6,215.7 901.6,215.8 901.5,215.8 904.1,210.0 898.2,211.6 895.3,209.8 895.3,209.6 895.4,209.6 895.2,209.2 895.0,208.9 894.8,208.7 896.9,205.9 890.9,202.5 888.2,196.0 887.8,196.0 884.1,192.2 873.1,191.4 872.1,187.6 864.8,184.9 860.9,181.8 859.7,175.9 850.9,174.3 850.7,168.2 844.7,168.0 845.6,164.3 850.1,164.1 848.9,161.0 855.8,161.8 856.7,152.5 851.5,144.3 848.5,141.9 845.8,136.5 837.7,139.1 838.8,129.9 832.6,129.6 832.8,128.1 826.3,127.0 826.1,131.3 821.7,132.0 824.1,140.8 815.1,147.1 816.1,151.0 793.1,117.7 787.2,123.3 788.5,125.5 786.2,128.7 780.6,129.7 782.5,135.1 771.9,140.0 767.0,143.5 773.0,152.4 777.3,153.3 779.9,159.1 783.5,158.0 784.7,166.8 787.1,167.2 788.3,171.9 785.4,180.3 780.4,183.6 762.8,179.1 762.7,181.4 757.8,187.4 751.6,191.8 752.8,201.0 750.4,206.2 739.7,211.8 739.5,212.5 739.7,213.3 739.7,213.3 740.0,213.5 740.2,214.3 740.5,214.8 741.5,217.0 746.7,219.3 747.9,222.4 748.4,222.5 749.0,222.5 750.1,222.9 750.2,223.0 752.5,225.1 748.0,227.1 750.4,234.2 760.0,231.6 761.8,239.9 758.6,245.6 753.6,245.9 751.3,251.3 756.6,254.2 760.6,260.1 765.1,260.8 761.2,263.3 760.7,269.8 758.1,276.9 761.4,287.0 756.6,286.8 756.4,292.5 758.1,295.9 766.0,298.6 767.0,294.8 773.0,294.4Z","lx":830.2,"ly":228.5},"kz-33":{"d":"M872.4,406.1 867.1,396.1 866.5,390.9 863.4,382.4 864.2,377.5 857.5,373.2 856.2,370.0 852.6,372.5 848.4,368.6 854.2,362.1 860.7,361.6 862.9,357.9 868.9,355.1 873.6,356.0 891.1,343.8 894.6,342.1 899.6,347.1 904.4,347.1 908.8,344.8 914.4,346.1 916.8,343.9 914.3,336.7 906.6,333.9 903.2,333.6 900.9,326.4 896.3,322.7 892.2,314.9 881.5,306.9 881.1,302.4 877.8,304.8 870.0,301.6 862.9,302.8 845.5,297.5 843.8,294.6 838.9,293.7 836.8,295.6 826.0,300.5 815.8,290.9 804.7,293.8 803.3,291.2 798.8,290.8 791.1,287.2 788.4,291.9 784.5,289.2 781.4,292.7 776.2,292.4 773.0,294.4 778.1,314.2 772.5,315.3 771.0,318.2 767.0,318.6 765.7,315.8 760.6,316.2 762.8,318.9 753.5,315.8 752.1,318.7 747.3,315.6 743.9,318.0 743.6,325.1 747.2,352.1 747.4,356.2 750.3,362.3 756.8,367.6 760.2,377.0 764.5,376.7 769.1,381.7 768.9,386.5 772.1,393.1 779.2,396.9 780.6,400.6 785.2,400.2 785.4,407.0 799.1,410.5 798.0,414.2 800.4,416.6 810.4,413.4 821.5,414.5 831.5,411.8 835.3,412.1 844.9,404.9 850.3,405.9 855.1,409.1 863.9,409.9 871.7,407.8 872.4,406.1Z","lx":819.5,"ly":360},"kz-62":{"d":"M402.4,308.8 413.9,312.3 408.7,315.1 422.0,323.3 424.8,323.2 440.1,329.4 452.6,336.8 457.8,337.9 463.6,344.2 469.1,348.1 477.1,349.5 509.5,351.1 510.5,356.4 560.0,355.7 619.1,353.0 618.5,340.9 616.9,334.3 618.1,326.1 615.6,300.7 617.0,290.8 622.2,294.7 625.8,295.4 627.1,288.4 635.4,284.2 630.5,274.9 630.6,270.6 627.1,265.0 629.8,263.8 630.6,257.7 630.1,250.0 632.7,248.8 631.9,241.7 629.0,240.3 627.4,232.8 620.8,233.5 619.9,230.7 604.4,234.1 599.7,231.0 598.3,227.1 592.9,226.4 593.4,235.9 590.8,246.6 576.0,249.5 574.7,252.6 566.2,255.7 559.4,250.0 553.2,250.3 548.4,247.8 539.5,237.3 528.4,235.2 527.6,227.1 523.9,222.2 522.1,216.7 515.6,208.6 515.0,207.7 507.0,218.7 502.0,221.3 497.4,225.9 494.7,232.9 491.5,234.0 483.1,243.3 475.7,243.6 475.1,247.2 468.5,249.3 450.2,244.7 448.8,254.5 443.0,254.4 445.6,260.7 436.8,262.2 438.0,266.6 431.1,273.1 433.4,279.5 437.2,283.5 430.4,290.7 420.9,297.4 409.7,302.7 402.4,308.8Z","lx":530.0,"ly":294.0}}};
+
+/* ===== helpers ===== */
+const $ = id => document.getElementById(id);
+const nf = (x,d=0) => new Intl.NumberFormat("ru-RU",{maximumFractionDigits:d}).format(x);
+const store = {
+  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const fmtEnergy = k => k>=1e9 ? nf(k/1e9,2)+" ТВт·ч/год" : k>=1e6 ? nf(k/1e6,k>=1e8?0:1)+" ГВт·ч/год" : k>=1e4 ? nf(k/1e3)+" МВт·ч/год" : nf(k)+" кВт·ч/год";
+const fmtVol = (m,s) => m>=1e9 ? nf(m/1e9,2)+" млрд м³"+s : m>=1e6 ? nf(m/1e6,1)+" млн м³"+s : nf(m)+" м³"+s;
+const fmtMass = t => t>=1e6 ? nf(t/1e6,1)+" млн т/год" : t>=1e4 ? nf(t/1e3)+" тыс. т/год" : nf(t)+" т/год";
+const fmtMoney = tg => tg>=1e9 ? nf(tg/1e9,1)+" млрд тг" : tg>=1e6 ? nf(tg/1e6,1)+" млн тг" : nf(tg)+" тг";
+const fmtPower = kw => kw>=1e3 ? nf(kw/1e3,1)+" МВт" : nf(kw,1)+" кВт";
+const compact = n => n>=1e6 ? nf(n/1e6,2)+" млн" : n>=1e3 ? nf(n/1e3,1)+" тыс." : nf(n);
+function plural(n,a,b,c){n=Math.abs(Math.round(n))%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c;}
+
+function model(h, share, thOwn=K.thOwn){
+  let manure=0, gas=0;
+  ANIMALS.forEach(a=>{const n=h[a.k]||0, s=typeof share==="number"?share:(share[a.k]||0); manure+=n*a.manure*s; gas+=n*a.gas*s;});
+  const gasYear=gas*365, eGross=gasYear*K.kwhPerM3, elGross=eGross*K.elEff;
+  const elNet=elGross*(1-K.elOwn), heatKwh=eGross*K.thEff*(1-thOwn);
+  return {gasDay:gas, gasYear, elNet, heatGcal:heatKwh/K.gcal, powerKw:elGross/K.hours,
+          gasEq:gasYear*K.gasEq, fertT:manure*365/1000*K.digest, homes:elNet/K.home};
+}
+function headsOf(id){ const o={}; ANIMALS.forEach(a=>o[a.k]=0); MAPPED.forEach(a=>o[a.k]=STOCK[id][a.idx]||0); return o; }
+const nameOf = id => id==="total" ? "Республика Казахстан" : NAMES[id][0];
+const regionModel = id => model(headsOf(id), regionShares(id), regionHeatOwn(id));
+const useful = m => m.elNet + m.heatGcal*K.gcal;
+function sumModels(ids){
+  const out={gasDay:0,gasYear:0,elNet:0,heatGcal:0,powerKw:0,gasEq:0,fertT:0,homes:0};
+  ids.forEach(id=>{const m=regionModel(id); Object.keys(out).forEach(k=>out[k]+=m[k]);});
+  return out;
+}
+/* собранная доля навоза по биогазу, % */
+function collectedPct(ids){
+  let adj=0, full=0;
+  ids.forEach(id=>{adj+=regionModel(id).gasDay; full+=model(headsOf(id),1).gasDay;});
+  return full>0 ? adj/full*100 : 0;
+}
+function heatOwnAvg(ids){
+  let w=0, s=0; ids.forEach(id=>{const g=regionModel(id).gasDay; w+=g; s+=g*regionHeatOwn(id);});
+  return w>0 ? s/w : K.thOwn;
+}
+
+/* ===== state ===== */
+let share = store.get("bg-share") || 50;
+let heads = Object.assign({}, FARM, store.get("bg-heads2")||{});
+let prices = Object.fromEntries(PRICES.map(p=>[p.k,p.v])); Object.assign(prices, store.get("bg-prices")||{});
+let heatOwn = store.get("bg-heatown") || K.thOwn;
+let metric = "biogas", selected = null, fromLabel = store.get("bg-from") || "";
+
+/* ===== calculator ===== */
+function buildCalc(){
+  const EMO={krs:"🐄",sheep:"🐑",goats:"🐐",horses:"🐎",camels:"🐫",pigs:"🐖",poultry:"🐔"};
+  const stepOf = v => v<100?10 : v<1000?50 : v<10000?500 : v<100000?5000 : 50000;
+  ANIMALS.forEach(a=>{
+    const row=document.createElement("div"); row.className="row";
+    row.innerHTML=`<label class="an" for="h-${a.k}"><span class="emo" aria-hidden="true">${EMO[a.k]}</span><span>${a.name}${a.hint?`<small>${a.hint}</small>`:""}</span></label>
+      <div class="stp"><button type="button" class="sb" data-d="-1" aria-label="Меньше: ${a.name}">−</button><input id="h-${a.k}" type="number" inputmode="numeric" min="0" step="1"><button type="button" class="sb" data-d="1" aria-label="Больше: ${a.name}">+</button></div>`;
+    $("herd").appendChild(row);
+    const inp=row.querySelector("input");
+    const commit=v=>{heads[a.k]=Math.max(0,Math.round(v||0));setFrom("");setHeatOwn(K.thOwn);store.set("bg-heads2",heads);renderCalc();};
+    inp.addEventListener("input",()=>commit(+inp.value));
+    row.querySelectorAll(".sb").forEach(b=>b.addEventListener("click",()=>{
+      const d=+b.dataset.d, v=heads[a.k]||0, st=stepOf(d<0?Math.max(0,v-1):v);
+      const nv=Math.max(0,Math.round((v+d*st)/st)*st); inp.value=nv; commit(nv);
+    }));
+  });
+  PRICES.forEach(p=>{
+    const row=document.createElement("div"); row.className="row";
+    row.innerHTML=`<label for="p-${p.k}">${p.label}</label><div class="num"><input id="p-${p.k}" type="number" inputmode="decimal" min="0"><span>${p.unit}</span></div>`;
+    $("prices").appendChild(row);
+    const inp=row.querySelector("input"); inp.value=prices[p.k];
+    inp.addEventListener("input",()=>{prices[p.k]=Math.max(0,+inp.value||0);store.set("bg-prices",prices);renderCalc();});
+  });
+  $("coefTable").innerHTML=ANIMALS.map(a=>`<tr><td>${a.name}</td><td>${nf(a.manure,2)}</td><td>${nf(a.gas,3)}</td></tr>`).join("");
+  $("share").value=share;
+  $("share").addEventListener("input",e=>{share=+e.target.value;store.set("bg-share",share);renderCalc();});
+  $("resetBtn").addEventListener("click",()=>{heads=Object.assign({},FARM);store.set("bg-heads2",heads);setFrom("");setHeatOwn(K.thOwn);syncInputs();renderCalc();});
+  syncInputs(); setFrom(fromLabel);
+}
+function syncInputs(){ ANIMALS.forEach(a=>$("h-"+a.k).value=heads[a.k]||0); }
+function setFrom(t){ fromLabel=t; store.set("bg-from",t); $("fromNote").textContent=t; $("fromNote").classList.toggle("on",!!t); }
+function setHeatOwn(v){ heatOwn=v; store.set("bg-heatown",v); }
+
+function econ(r){
+  const capex = r.powerKw>0 ? prices.capex*K.refKw*Math.pow(r.powerKw/K.refKw,K.scale) : 0;
+  const revenue = r.elNet*prices.tariff + r.heatGcal*prices.heat + r.fertT*prices.fert;
+  const opex = r.powerKw>0 ? capex*K.opex + prices.fixed : 0;
+  const net = revenue-opex;
+  return {capex,revenue,opex,net,pb: net>0 ? capex/net : Infinity};
+}
+function verdict(r,ec){
+  if(r.gasDay<=0) return {cls:"",big:"—",short:"—",unit:"введите поголовье",note:"введите поголовье"};
+  if(ec.net<=0) return {cls:"v-bad",big:"Не окупается",short:"нет",unit:"невыгодно",note:"доход меньше затрат на эксплуатацию"};
+  if(ec.pb>25) return {cls:"v-bad",big:"Более 25 лет",short:"> 25 лет",unit:"невыгодно",note:"дольше срока службы установки — проект невыгоден"};
+  const pr = ec.pb<10 ? Math.round(ec.pb*10)/10 : Math.round(ec.pb);
+  const word = Number.isInteger(pr)?plural(pr,"год","года","лет"):"года";
+  return {cls: ec.pb<=10?"v-ok":"v-warn", big:nf(pr,1)+" "+word, short:nf(pr,1), unit:word+(ec.pb<=10?", выгодно":", долго"),
+          note:"срок окупаемости при чистом доходе "+fmtMoney(ec.net)+" в год"};
+}
+const compactN = v => v>=1e6 ? nf(v/1e6,2)+" млн" : v>=1e4 ? nf(v/1e3,1)+" тыс." : nf(v, v<100?1:0);
+function renderCalc(){
+  $("shareOut").textContent=nf(share)+"%";
+  const r=model(heads,share/100,heatOwn);
+  $("sGas").textContent=compactN(r.gasDay);
+  const hh=Math.floor(r.homes); $("sHomes").textContent=compactN(hh).replace(/,0$/,""); $("sHomesU").textContent=plural(hh,"дом","дома","домов");
+  $("rBiogasYear").textContent=fmtVol(r.gasYear,"");
+  $("rElec").textContent=fmtEnergy(r.elNet).replace("/год","");
+  $("rPower").textContent=fmtPower(r.powerKw);
+  $("rGas").textContent=fmtVol(r.gasEq,"");
+  $("rFert").textContent=fmtMass(r.fertT).replace("/год","");
+  const h=Math.floor(r.homes); $("rHomes").textContent=nf(h)+" "+plural(h,"дом","дома","домов");
+  $("rHeat").textContent=nf(r.heatGcal, r.heatGcal<100?1:0)+" Гкал";
+  const {capex,revenue,opex,net}=econ(r);
+  $("rCapex").textContent=fmtMoney(capex); $("rRevenue").textContent=fmtMoney(revenue); $("rOpex").textContent=fmtMoney(opex);
+  const v=verdict(r,econ(r));
+  $("rPayback").textContent=v.big; $("rPaybackNote").textContent=v.note;
+  $("rPaybackBox").className="payback "+v.cls;
+  $("sVerdict").className="cs verdict "+v.cls; $("sPb").textContent=v.short; $("sPbU").textContent=v.unit;
+}
+
+/* panels and navigation */
+let lastFocus=null, openId=null;
+const PANELS=["drawer","rating","howto"];
+function syncTabs(){ document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-pressed", (b.dataset.panel||"")===(openId||""))); }
+function openPanel(id, focusEl){
+  if(openId===id) return;
+  if(openId) closePanel(true); else lastFocus=document.activeElement;
+  openId=id;
+  const d=$(id); d.hidden=false; d.scrollTop=0;
+  requestAnimationFrame(()=>{d.classList.add("on");$("scrim").classList.add("on");});
+  $("stage").inert=true; PANELS.forEach(p=>{ if(p!==id) $(p).inert=true; });
+  document.body.style.overflow="hidden";
+  if(id==="howto"){ renderVillage(); setTimeout(v3dStart,80); }
+  syncTabs();
+  setTimeout(()=>(focusEl||d).focus({preventScroll:true}),60);
+}
+function closePanel(silent){
+  if(!openId) return;
+  if(openId==="howto"){ v3dStop(); stopPlay(); }
+  const d=$(openId); d.classList.remove("on"); $("scrim").classList.remove("on");
+  $("stage").inert=false; PANELS.forEach(p=>$(p).inert=false);
+  document.body.style.overflow="";
+  setTimeout(()=>{ if(!d.classList.contains("on")) d.hidden=true; },300);
+  openId=null; syncTabs();
+  if(!silent) (lastFocus||document.body).focus({preventScroll:true});
+}
+const openCalc = () => openPanel("drawer", $("h-krs"));
+const FOCUS = {drawer:()=>$("h-krs"), rating:()=>$("closeRating"), howto:()=>$("closeHow")};
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  const id=b.dataset.panel;
+  if(!id || openId===id){ closePanel(); return; }
+  openPanel(id, FOCUS[id]());
+}));
+$("brandHome").addEventListener("click",e=>{ e.preventDefault(); closePanel(); window.scrollTo({top:0,behavior:"smooth"}); });
+$("closeCalc").addEventListener("click",()=>closePanel());
+$("closeRating").addEventListener("click",()=>closePanel());
+$("closeHow").addEventListener("click",()=>closePanel());
+$("scrim").addEventListener("click",()=>closePanel());
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&openId)closePanel();});
+
+/* ===== map ===== */
+const METRICS=[{k:"biogas",name:"Биогаз"},...MAPPED.map(a=>({k:a.k,name:a.name}))];
+const REG_IDS=Object.keys(NAMES).filter(id=>!CITIES.includes(id));
+function metricValue(id){
+  if(metric==="biogas") return regionModel(id).gasYear;
+  const a=MAPPED.find(x=>x.k===metric); return STOCK[id][a.idx]||0;
+}
+const metricShort = v => metric==="biogas" ? (v>=1e6?nf(v/1e6,1)+" млн м³":nf(v)+" м³") : compact(v);
+const metricLong = v => metric==="biogas" ? fmtVol(v," биогаза в год") : nf(v)+" гол.";
+
+
+function buildMap(){
+  const svg=$("map"), ns="http://www.w3.org/2000/svg";
+  svg.setAttribute("viewBox","-70 -40 1140 640");
+  const gR=document.createElementNS(ns,"g"), gL=document.createElementNS(ns,"g"), gC=document.createElementNS(ns,"g"); gR.id="gReg";
+  Object.keys(NAMES).forEach(id=>{
+    const f=MAP.f[id];
+    if(CITIES.includes(id)){
+      const c=document.createElementNS(ns,"circle");
+      c.setAttribute("cx",f.lx);c.setAttribute("cy",f.ly);c.setAttribute("r",7);c.setAttribute("class","city");c.dataset.id=id;gC.appendChild(c);wire(c,id);
+      const ct=document.createElementNS(ns,"text"); const off={"kz-71":[11,4],"kz-75":[11,14],"kz-79":[11,5]}[id];
+      ct.setAttribute("x",f.lx+off[0]); ct.setAttribute("y",f.ly+off[1]); ct.setAttribute("class","lbl city-l"); ct.textContent=NAMES[id][0].replace("Город ",""); gL.appendChild(ct);
+    } else {
+      const p=document.createElementNS(ns,"path"); p.setAttribute("d",f.d); p.setAttribute("class","reg"); p.dataset.id=id; gR.appendChild(p); wire(p,id);
+      const t1=document.createElementNS(ns,"text"); t1.setAttribute("x",f.lx); t1.setAttribute("y",f.ly-4); t1.setAttribute("class","lbl"); t1.textContent=NAMES[id][2];
+      const t2=document.createElementNS(ns,"text"); t2.setAttribute("x",f.lx); t2.setAttribute("y",f.ly+11); t2.setAttribute("class","lbl v"); t2.dataset.id=id;
+      gL.append(t1,t2);
+    }
+  });
+  svg.append(gR,$("mapLakes"),gL,gC);
+  METRICS.forEach(m=>{
+    const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=m.name; b.dataset.k=m.k; b.setAttribute("aria-pressed",m.k===metric);
+    b.addEventListener("click",()=>{metric=m.k;document.querySelectorAll("#chips .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.k===metric));renderMap();});
+    $("chips").appendChild(b);
+  });
+}
+function wire(el,id){
+  el.setAttribute("tabindex","0"); el.setAttribute("role","button"); el.setAttribute("aria-label",nameOf(id));
+  el.addEventListener("click",()=>select(id));
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(id);}});
+  el.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;const box=$("mapbox").getBoundingClientRect(),tip=$("tip");
+    tip.innerHTML=`<b>${nameOf(id)}</b><br>${metricLong(metricValue(id))}`;tip.style.left=(e.clientX-box.left)+"px";tip.style.top=(e.clientY-box.top)+"px";tip.classList.add("on");});
+  el.addEventListener("pointerleave",()=>$("tip").classList.remove("on"));
+}
+function niceRound(x){ if(x<=0) return 0; const p=Math.pow(10,Math.floor(Math.log10(x))-1); return Math.round(x/p)*p; }
+function breaksFor(vals){
+  const v=vals.filter(x=>x>0).sort((a,b)=>a-b); if(!v.length) return [];
+  const q=p=>{const i=p*(v.length-1), lo=Math.floor(i), hi=Math.ceil(i); return v[lo]+(v[hi]-v[lo])*(i-lo);};
+  const out=[]; [.2,.4,.6,.8].forEach(p=>{const b=niceRound(q(p)); if(!out.length||b>out[out.length-1]) out.push(b);});
+  return out;
+}
+const legNum = v => metric==="biogas" ? nf(v/1e6) : nf(v/1e3);
+function renderMap(){
+  const vals=REG_IDS.map(metricValue), br=breaksFor(vals), off=4-br.length;
+  const cls = v => br.filter(b=>v>=b).length;
+  const gR=$("gReg");
+  document.querySelectorAll("#map .reg").forEach(p=>{
+    const v=metricValue(p.dataset.id);
+    p.style.fill = v>0 ? `var(--c${cls(v)+1+off})` : "var(--land)";
+    const on=p.dataset.id===selected; p.classList.toggle("sel",on); if(on) gR.appendChild(p);
+  });
+  document.querySelectorAll("#map .lbl.v").forEach(t=>t.textContent=metricShort(metricValue(t.dataset.id)));
+  document.querySelectorAll("#map .city").forEach(c=>c.classList.toggle("sel",c.dataset.id===selected));
+  const items=[];
+  for(let i=0;i<=br.length;i++){
+    const txt = i===0 ? "до "+legNum(br[0]) : i===br.length ? "от "+legNum(br[i-1]) : legNum(br[i-1])+"–"+legNum(br[i]);
+    items.push(`<span><i style="background:var(--c${i+1+off})"></i>${txt}</span>`);
+  }
+  $("legScale").innerHTML=items.join("");
+  $("legUnit").textContent = metric==="biogas" ? "млн м³ биогаза в год, с учётом климата и выпаса" : "тыс. голов";
+}
+
+/* ===== region card ===== */
+function select(id){
+  selected = selected===id ? null : id; renderMap(); renderCard();
+  if(window.matchMedia("(max-width:1099px)").matches){
+    const r=$("card").getBoundingClientRect();
+    if(r.top>window.innerHeight-120) $("card").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+function renderCard(){
+  const id=selected||"total", row=STOCK[id];
+  $("cName").textContent=nameOf(id);
+  $("cMeta").textContent = !selected ? "Всего по стране, 2026 г. Нажмите на область на карте." :
+    CITIES.includes(id) ? "Город республиканского значения." : "Административный центр — "+NAMES[id][1]+".";
+  $("cStock").innerHTML = MAPPED.map(a=>{
+    const v=row[a.idx];
+    const max=Math.max(...REG_IDS.map(r=>STOCK[r][a.idx]||0));
+    const w = selected && v ? Math.max(2,v/max*100) : (selected?0:100);
+    const share_ = selected && v ? (v/STOCK.total[a.idx]*100) : null;
+    const note = !selected ? "" : v ? `${nf(share_, share_<1?2:1)}% от поголовья страны` : "нет данных (прочерк в таблице)";
+    return `<li><span>${a.name}</span><span class="n">${v?nf(v)+" гол.":"—"}</span>${selected?`<span class="bar" aria-hidden="true"><i style="width:${w}%"></i></span>`:""}${note?`<span class="sh">${note}</span>`:""}</li>`;
+  }).join("");
+  const ALL=Object.keys(NAMES);
+  const m = selected ? regionModel(id) : sumModels(ALL);
+  $("potLab").textContent = "Биогазовый потенциал "+(!selected?"страны":CITIES.includes(id)?"города":"области");
+  const parts=fmtVol(m.gasYear,"").split(" "); $("pBiogas").textContent=parts[0]; $("pUnit").textContent=parts.slice(1).join(" ")+" в год";
+  $("pElec").textContent=fmtEnergy(m.elNet);
+  $("pHeat").textContent = m.heatGcal>=1e4 ? nf(m.heatGcal/1000)+" тыс. Гкал/год" : nf(m.heatGcal)+" Гкал/год";
+  if(!selected) $("pShare").textContent="С учётом климата и выпаса в каждой области: собирается ≈"+nf(collectedPct(ALL))+"% навоза.";
+  else { const rk=RANK.indexOf(id);
+    $("pShare").textContent="Стойловый период "+stallDays(id)+" дней, собирается ≈"+nf(collectedPct([id]))+"% навоза."+(rk>=0?" Место в рейтинге: "+(rk+1)+" из "+RANK.length+".":""); }
+  $("toCalc").textContent = "Посчитать энергию для "+(!selected?"страны":CITIES.includes(id)?"города":"области");
+  $("toCalc").disabled = !MAPPED.some(a=>row[a.idx]);
+}
+$("toCalc").addEventListener("click",()=>{
+  const id=selected||"total", ids = selected ? [id] : Object.keys(NAMES);
+  heads=headsOf(id); store.set("bg-heads2",heads); syncInputs();
+  share=Math.max(5,collectedPct(ids)); store.set("bg-share",share); $("share").value=Math.round(share);
+  setHeatOwn(heatOwnAvg(ids));
+  setFrom("Подставлено поголовье: "+nameOf(id)+" (таблица 2026 г.). Доля сбора навоза "+nf(share)+"% и подогрев реактора "+nf(heatOwn*100)+"% тепла — по климату и выпасу "+(selected?(CITIES.includes(id)?"города":"области"):"областей")+".");
+  renderCalc(); openCalc();
+});
+
+/* ===== rating ===== */
+const OBL = Object.keys(NAMES).filter(id=>!CITIES.includes(id));
+const RANK = [...OBL].sort((a,b)=>useful(regionModel(b))-useful(regionModel(a)));
+const NAIVE = [...OBL].sort((a,b)=>useful(model(headsOf(b),0.5,K.thOwn))-useful(model(headsOf(a),0.5,K.thOwn)));
+function renderRating(){
+  const naiveE = id => useful(model(headsOf(id),0.5,K.thOwn));
+  const maxE=Math.max(...OBL.map(id=>Math.max(useful(regionModel(id)),naiveE(id))));
+  $("rBody").innerHTML = RANK.map((id,i)=>{
+    const m=regionModel(id), e=useful(m), ne=naiveE(id), was=NAIVE.indexOf(id)+1, d=was-(i+1);
+    const chg = d>0 ? `<span class="chg up" title="без учёта климата — ${was}-е место">+${d}</span>` : d<0 ? `<span class="chg down" title="без учёта климата — ${was}-е место">−${-d}</span>` : `<span class="chg"></span>`;
+    return `<li><span class="pl">${i+1}</span>
+      <span class="nm"><button type="button" data-id="${id}">${NAMES[id][0]}</button><small>стойловый период ${stallDays(id)} дней, собирается ${nf(collectedPct([id]))}% навоза, ${nf(regionHeatOwn(id)*100)}% тепла на подогрев</small></span>
+      <span class="track" role="img" aria-label="${nf(e/1e6)} ГВт·ч в год: электроэнергия ${nf(m.elNet/1e6)}, тепло ${nf(m.heatGcal*K.gcal/1e6)}; без учёта климата ${nf(ne/1e6)}"><span class="fill power" style="width:${m.elNet/maxE*100}%"></span><span class="fill heat" style="left:${m.elNet/maxE*100}%;width:${m.heatGcal*K.gcal/maxE*100}%"></span><span class="naive" style="left:${ne/maxE*100}%"></span></span>
+      <span class="v">${nf(e/1e6)}</span>${chg}</li>`;
+  }).join("");
+  $("rBody").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    closePanel(true);
+    selected=b.dataset.id; renderMap(); renderCard();
+    const el=document.querySelector('#map [data-id="'+selected+'"]'); if(el) el.focus({preventScroll:true});
+    if(window.matchMedia("(max-width:1099px)").matches) $("card").scrollIntoView({behavior:"smooth",block:"start"});
+  }));
+}
+/* ===== 3D-макет села ===== */
+const V3D = {inited:false, running:false, show:"all", flows:[]};
+const FLOW_COL = {manure:0xC0955A, gas:0x8EB2FF, power:0xF5C542, heat:0xF08A5D, digest:0x8FCB7E};
+const REDUCE = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function v3dInit(){
+  if(V3D.inited) return true;
+  const fail = () => { $("v3dFallback").hidden=false; return false; };
+  if(!window.THREE || !THREE.OrbitControls) return fail();
+  const T=THREE, box=$("v3d"), canvas=$("v3dCanvas");
+  let renderer;
+  try { renderer = new T.WebGLRenderer({canvas, antialias:true}); } catch(e){ return fail(); }
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+
+  const scene = new T.Scene();
+  scene.background = new T.Color(0x2A3640);
+  scene.fog = new T.Fog(0x2A3640, 75, 150);
+  const camera = new T.PerspectiveCamera(38, 1, 0.5, 400);
+  camera.position.set(-10, 30, 44);
+  const controls = new T.OrbitControls(camera, canvas);
+  controls.target.set(7, 0, 2);
+  controls.enableDamping = true; controls.dampingFactor = .08;
+  controls.enablePan = false;
+  controls.minDistance = 28; controls.maxDistance = 120;
+  controls.maxPolarAngle = Math.PI*0.45;
+  controls.autoRotate = !REDUCE; controls.autoRotateSpeed = 0.5;
+  controls.addEventListener("start", ()=>{ controls.autoRotate=false; $("v3dHint").classList.add("off"); });
+
+  scene.add(new T.HemisphereLight(0xDCE8FF, 0x4A5A3E, 0.95));
+  const sun = new T.DirectionalLight(0xFFF0D8, 0.95);
+  sun.position.set(-30, 55, 30); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left:-55, right:55, top:45, bottom:-45, near:1, far:160});
+  sun.shadow.bias = -0.0006;
+  scene.add(sun);
+
+  const mats = {};
+  const mat = c => mats[c] || (mats[c] = new T.MeshStandardMaterial({color:c, roughness:.85, metalness:0, flatShading:true}));
+  function add(geo, c, x, y, z, o={}){
+    const m = new T.Mesh(geo, typeof c==="number" ? mat(c) : c);
+    m.position.set(x, y, z); m.castShadow = o.cast!==false; m.receiveShadow = true;
+    if(o.ry) m.rotation.y = o.ry;
+    (o.parent||scene).add(m); return m;
+  }
+  function prism(w, h, len){
+    const g = new T.CylinderGeometry(1, 1, len, 3);
+    g.rotateX(-Math.PI/2); g.translate(0, 0.5, 0); g.scale(w/1.732, h/1.5, 1);
+    return g;
+  }
+
+  /* земля, поле, дорога */
+  const ground = add(new T.CircleGeometry(240, 64), 0x51684A, 0, 0, 0, {cast:false});
+  ground.rotation.x = -Math.PI/2;
+  add(new T.BoxGeometry(70, 0.06, 2.4), 0x6B6250, 6, 0.03, 5.6, {cast:false});
+  add(new T.BoxGeometry(25, 0.14, 13), 0x5B6A34, 23, 0.07, 15.5, {cast:false});
+  for(let i=0;i<6;i++) add(new T.BoxGeometry(25, 0.18, 0.55), 0x48582A, 23, 0.09, 10.3+i*2.1, {cast:false});
+
+  /* ферма */
+  add(new T.BoxGeometry(11, 4, 6), 0xB9AE96, -17, 2, -1);
+  const roof = add(prism(7, 2.4, 12), 0x7E4E3B, -17, 4, -1); roof.rotation.y = Math.PI/2;
+  add(new T.BoxGeometry(2, 2.8, 0.1), 0x6B5A45, -17, 1.4, 2.05);
+  for(const x of [-21,-13]) add(new T.BoxGeometry(1.4, 0.9, 0.1), 0x6B5A45, x, 2.6, 2.05);
+  const fenceM = 0x8A7A60;
+  for(let i=0;i<=5;i++) add(new T.BoxGeometry(0.15, 1.1, 0.15), fenceM, -22+i*2, 0.55, 9);
+  for(let i=0;i<=3;i++){ add(new T.BoxGeometry(0.15, 1.1, 0.15), fenceM, -22, 0.55, 3+i*2); add(new T.BoxGeometry(0.15, 1.1, 0.15), fenceM, -12, 0.55, 3+i*2); }
+  add(new T.BoxGeometry(10, 0.12, 0.08), fenceM, -17, 0.9, 9);
+  add(new T.BoxGeometry(0.08, 0.12, 6), fenceM, -22, 0.9, 6); add(new T.BoxGeometry(0.08, 0.12, 6), fenceM, -12, 0.9, 6);
+  function cow(x, z, ry){
+    const g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    add(new T.BoxGeometry(1.7, 0.85, 0.75), 0xEDE8DA, 0, 1.05, 0, {parent:g});
+    add(new T.BoxGeometry(0.6, 0.55, 0.77), 0x3A3330, -0.2, 1.15, 0, {parent:g});
+    add(new T.BoxGeometry(0.55, 0.5, 0.5), 0xEDE8DA, 1.05, 1.35, 0, {parent:g});
+    for(const [lx,lz] of [[-.6,-.25],[-.6,.25],[.6,-.25],[.6,.25]]) add(new T.BoxGeometry(0.18, 0.65, 0.18), 0xCFC8B8, lx, 0.32, lz, {parent:g});
+  }
+  cow(-20,4.6,.3); cow(-16.5,5.2,-.4); cow(-13.8,4.4,2.6); cow(-19,7.4,1.2); cow(-15,7.6,-.2);
+
+  /* установка */
+  add(new T.CylinderGeometry(1.3, 1.3, 1.8, 16), 0x7E8B8A, -8, 0.9, 1);
+  add(new T.CylinderGeometry(4.2, 4.2, 4, 28), 0x8E9A99, 0, 2, 0);
+  const dome = add(new T.SphereGeometry(4.2, 28, 12, 0, Math.PI*2, 0, Math.PI/2), 0x5E8C61, 0, 4, 0);
+  dome.scale.y = .55;
+  const gh = add(new T.SphereGeometry(3, 24, 10, 0, Math.PI*2, 0, Math.PI/2), 0x5B79B0, 8.5, 0, -7);
+  add(new T.CylinderGeometry(3.15, 3.15, 0.3, 24), 0x7E8B8A, 8.5, 0.15, -7);
+  add(new T.BoxGeometry(5, 3.2, 3.4), 0xC9C2AE, 17, 1.6, 0);
+  add(new T.BoxGeometry(1.2, 2, 0.1), 0x6B5A45, 15.6, 1, 1.75);
+  add(new T.CylinderGeometry(0.35, 0.4, 3.6, 10), 0x7A7F80, 18.8, 5, -0.8);
+  const lag = add(new T.CylinderGeometry(3.8, 3.8, 0.5, 28), 0x6A6450, 1, 0.25, 10.5);
+  add(new T.CylinderGeometry(3.3, 3.3, 0.52, 28), 0x4E5E35, 1, 0.27, 10.5, {cast:false});
+
+  /* село */
+  const houses = [[25,-11,.1],[30.5,-12.5,-.05],[36,-10.5,.12],[25.5,-5,0],[31,-6,.05],[36.5,-4.6,-.1]];
+  const winMat = new T.MeshBasicMaterial({color:0xFFD36B});
+  function house(x, z, ry, w=3.4, d=3, h=2.4, wall=0xC9C2AE, roofC=0x7E4E3B){
+    const g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    add(new T.BoxGeometry(w, h, d), wall, 0, h/2, 0, {parent:g});
+    add(prism(w+0.6, 1.7, d+0.6), roofC, 0, h, 0, {parent:g});
+    for(const wx of [-w/4, w/4]) add(new T.PlaneGeometry(0.7, 0.7), winMat, wx, h*0.55, d/2+0.02, {parent:g, cast:false});
+    return g;
+  }
+  houses.forEach(([x,z,ry])=>house(x,z,ry));
+  const school = house(34, 1.5, 0, 7, 4, 3, 0xD8CDB0, 0x6D5A7A);
+  for(const wx of [-2.6,2.6]) add(new T.PlaneGeometry(0.7,0.7), winMat, wx, 1.6, 2.02, {parent:school, cast:false});
+  function tree(x, z, s=1){
+    add(new T.CylinderGeometry(0.15*s, 0.2*s, 1*s, 6), 0x5A4632, x, 0.5*s, z);
+    add(new T.ConeGeometry(1.1*s, 2.8*s, 7), 0x2F5A3A, x, 2.2*s, z);
+  }
+  [[22,-15],[28,-16],[39,-13],[40,-7],[21,-8],[-25,-6],[-26,2],[-8,-7],[5,-9],[40,0],[-3,-11]].forEach(([x,z],i)=>tree(x,z,0.8+(i%3)*0.2));
+
+  /* опоры ЛЭП */
+  const poles = [[21,-3],[26.5,-8.5],[33,-8.5],[38.5,-7]];
+  poles.forEach(([x,z])=>{ add(new T.CylinderGeometry(0.12, 0.15, 5.2, 6), 0x8A7A60, x, 2.6, z); add(new T.BoxGeometry(1.4, 0.12, 0.12), 0x8A7A60, x, 5, z); });
+
+  /* трактор */
+  const tractor = new T.Group(); scene.add(tractor);
+  add(new T.BoxGeometry(2, 0.9, 1.2), 0xC2553A, 0, 1, 0, {parent:tractor});
+  add(new T.BoxGeometry(1, 1, 1.1), 0xC2553A, -0.4, 1.9, 0, {parent:tractor});
+  for(const [wx,wr] of [[-.6,.6],[.75,.4]]) for(const wz of [-.65,.65]){ const w=add(new T.CylinderGeometry(wr,wr,0.3,12), 0x222222, wx, wr, wz, {parent:tractor}); w.rotation.x=Math.PI/2; }
+  tractor.position.set(14, 0, 15.5);
+
+  /* дым */
+  const smokeMat = new T.MeshBasicMaterial({color:0xB8BEC0, transparent:true, opacity:.5, depthWrite:false});
+  const smoke = []; for(let i=0;i<6;i++){ const s=new T.Mesh(new T.SphereGeometry(0.5,8,6), smokeMat.clone()); scene.add(s); smoke.push(s); }
+
+  /* потоки */
+  function flow(type, pts, r=0.2){
+    const curve = new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)), false, "catmullrom", 0.2);
+    const tubeMat = new T.MeshStandardMaterial({color:FLOW_COL[type], transparent:true, opacity:.5, roughness:.6, emissive:FLOW_COL[type], emissiveIntensity:.2});
+    const tube = new T.Mesh(new T.TubeGeometry(curve, 80, r, 8, false), tubeMat); scene.add(tube);
+    const len = curve.getLength(), n = Math.max(3, Math.round(len/2.4));
+    const pm = new T.MeshBasicMaterial({color:FLOW_COL[type]});
+    const parts = []; for(let i=0;i<n;i++){ const s=new T.Mesh(new T.SphereGeometry(type==="power"?0.2:0.34, 10, 8), pm); scene.add(s); parts.push(s); }
+    V3D.flows.push({type, curve, tube, parts, len, t:Math.random()});
+  }
+  flow("manure", [[-11.4,.4,-.2],[-10,.4,1.2],[-8,.4,1.2],[-5.6,.4,.9],[-4.1,.4,.5]]);
+  flow("gas",    [[0,6.3,0],[2.5,7.6,-2.4],[6.5,6.2,-5.6],[8.5,2.8,-7]]);
+  flow("gas",    [[11.2,.6,-5.8],[13.6,.6,-3.2],[14.6,.6,-1.2]]);
+  flow("power",  [[18.6,3.3,-1.7],[21,5,-3],[26.5,5,-8.5],[33,5,-8.5],[38.5,5,-7]], 0.06);
+  flow("heat",   [[19.6,.4,1.8],[22,.4,2.6],[27,.4,-1.8],[33,.4,-1.8],[37,.4,-2.4]]);
+  flow("heat",   [[15,.4,1.9],[10.5,.4,3.6],[5.5,.4,3.6],[3.3,.4,2.6]]);
+  flow("digest", [[1.4,.4,4.1],[1.3,.4,6.8]]);
+  flow("digest", [[4.7,.4,11],[8,.4,12.5],[11.5,.4,13.2]]);
+
+  /* подписи */
+  const LBL = [["Ферма",[-17,7.2,-1]],["Приём",[-8,2.8,1]],["Метантенк",[0,7.9,0]],["Газгольдер",[8.5,4.1,-7]],["Мини-ТЭЦ",[16.4,4.8,0.5]],
+               ["Дигестат",[1,1.6,10.5]],["Село",[30.5,6.4,-12]],["Школа",[34,5.4,1.5]],["Поля",[24,1.3,19]]];
+  const lblBox = $("v3dLabels");
+  const labels = LBL.map(([t,p])=>{ const s=document.createElement("span"); s.textContent=t; lblBox.appendChild(s); return {el:s, v:new T.Vector3(...p)}; });
+
+  function resize(){
+    const w = box.clientWidth, h = box.clientHeight; if(!w||!h) return;
+    renderer.setSize(w, h, false); camera.aspect = w/h;
+    camera.fov = w < 560 ? 50 : 38; camera.updateProjectionMatrix();
+    const cls = w < 560 ? "s" : w < 800 ? "m" : "l";
+    if(cls !== V3D.sizeClass){
+      V3D.sizeClass = cls;
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, cls==="s" ? 88 : cls==="m" ? 70 : 58);
+    }
+  }
+  new ResizeObserver(resize).observe(box); resize();
+
+  const clock = new T.Clock(), tmp = new T.Vector3();
+  function frame(){
+    if(!V3D.running) return;
+    requestAnimationFrame(frame);
+    const dt = Math.min(clock.getDelta(), .05), time = clock.elapsedTime, speed = REDUCE ? 0 : 1;
+    V3D.flows.forEach(f=>{
+      f.t = (f.t + dt*speed*3.2/f.len) % 1;
+      const on = V3D.show==="all" || V3D.show===f.type;
+      f.tube.material.opacity = on ? .55 : .08;
+      f.parts.forEach((p,i)=>{ p.visible = on; if(on) f.curve.getPointAt((f.t + i/f.parts.length) % 1, p.position); });
+    });
+    gh.scale.y = .86 + (REDUCE ? 0 : Math.sin(time*1.3)*.05);
+    smoke.forEach((s,i)=>{ const k=((time*0.35 + i/smoke.length) % 1); s.position.set(18.8 + k*1.6, 7 + k*5, -0.8 - k*0.8); s.scale.setScalar(0.6 + k*1.8); s.material.opacity = .45*(1-k); });
+    if(!REDUCE){ const k=(Math.sin(time*0.25)+1)/2; tractor.position.x = 13 + k*20; tractor.rotation.y = Math.cos(time*0.25) > 0 ? 0 : Math.PI; }
+    controls.update();
+    renderer.render(scene, camera);
+    const w = box.clientWidth, h = box.clientHeight;
+    labels.forEach(l=>{ tmp.copy(l.v).project(camera); const vis = tmp.z < 1; l.el.style.display = vis ? "" : "none";
+      if(vis){ l.el.style.left = ((tmp.x+1)/2*w)+"px"; l.el.style.top = ((1-tmp.y)/2*h)+"px"; } });
+  }
+  V3D.frame = () => { clock.getDelta(); frame(); };
+  V3D.inited = true;
+  return true;
+}
+function v3dStart(){ if(V3D.running) return; if(!v3dInit()) return; V3D.running = true; V3D.frame(); }
+function v3dStop(){ V3D.running = false; }
+
+/* ===== как это работает ===== */
+const STEPS = [
+  ["Приём навоза","Навоз с фермы собирают в приёмную ёмкость и разбавляют водой до жидкой массы, чтобы её можно было перекачивать насосом."],
+  ["Метантенк","Масса поступает в герметичный реактор без доступа воздуха. Бактерии около 20–30 суток разлагают органику, и над ней собирается биогаз."],
+  ["Подогрев и перемешивание","Бактерии работают лучше всего при 35–38 °C. Реактор подогревают теплом самой установки, а мешалка не даёт образоваться корке. Зимой на подогрев уходит больше тепла."],
+  ["Газгольдер","Биогаз — это 55–65% метана и около трети углекислого газа. Он собирается в газгольдере, который сглаживает неравномерное выделение газа."],
+  ["Мини-ТЭЦ","Газопоршневой двигатель сжигает биогаз и крутит генератор: около 35% энергии становится электричеством, около 45% — теплом для домов, школы и самого реактора."],
+  ["Дигестат","Перебродивший навоз почти не пахнет и сохраняет азот, фосфор и калий. Его вывозят на поля как готовое удобрение."]
+];
+let step=null, playTimer=null;
+function showStep(n, auto){
+  step=n;
+  const svg=$("proc"); if(step) svg.dataset.step=step; else delete svg.dataset.step;
+  $("steps").querySelectorAll("button").forEach((b,i)=>b.setAttribute("aria-pressed",step===i+1));
+  $("stepInfo").innerHTML = step ? `<strong>${step}. ${STEPS[step-1][0]}</strong>${STEPS[step-1][1]}${auto?'<i class="prog run"></i>':""}` : "Нажмите на шаг или запустите показ, чтобы увидеть, что происходит на каждом этапе.";
+}
+function stopPlay(){ clearInterval(playTimer); playTimer=null; $("playSteps").textContent="Показать процесс по шагам"; $("playSteps").setAttribute("aria-pressed","false"); }
+function setStep(n){ stopPlay(); showStep(step===n?null:n, false); }
+$("playSteps").addEventListener("click",()=>{
+  if(playTimer){ stopPlay(); showStep(null,false); return; }
+  $("playSteps").textContent="Остановить показ"; $("playSteps").setAttribute("aria-pressed","true");
+  showStep(1,true);
+  playTimer=setInterval(()=>{ if(step>=STEPS.length){ stopPlay(); showStep(null,false); return; } showStep(step+1,true); },4500);
+});
+$("steps").innerHTML = STEPS.map((s,i)=>`<li><button type="button" aria-pressed="false"><b>${i+1}</b>${s[0]}</button></li>`).join("");
+$("steps").querySelectorAll("button").forEach((b,i)=>b.addEventListener("click",()=>setStep(i+1)));
+$("proc").querySelectorAll(".badges g").forEach(g=>g.addEventListener("click",()=>setStep(+g.dataset.s)));
+showStep(null,false);
+
+/* частицы в трубах схемы и пузырьки */
+(function(){
+  const NS="http://www.w3.org/2000/svg", svg=$("proc");
+  svg.querySelectorAll(".flow").forEach((p,i)=>{
+    p.id="pf"+i;
+    const type=["manure","gas","power","heat","digest"].find(k=>p.classList.contains(k));
+    const len=p.getTotalLength(), n=Math.max(2,Math.round(len/42)), dur=Math.max(1.2,len/70);
+    const g=document.createElementNS(NS,"g");
+    [...p.classList].filter(c=>c==="st"||/^s\d$/.test(c)).forEach(c=>g.classList.add(c));
+    for(let k=0;k<n;k++){
+      const c=document.createElementNS(NS,"circle"); c.setAttribute("r",type==="power"?3:4); c.setAttribute("class","pt "+type);
+      const am=document.createElementNS(NS,"animateMotion");
+      am.setAttribute("dur",dur+"s"); am.setAttribute("repeatCount","indefinite"); am.setAttribute("begin",(-k*dur/n)+"s");
+      const mp=document.createElementNS(NS,"mpath"); mp.setAttribute("href","#pf"+i); mp.setAttributeNS("http://www.w3.org/1999/xlink","xlink:href","#pf"+i);
+      am.appendChild(mp); c.appendChild(am); g.appendChild(c);
+    }
+    p.after(g);
+  });
+  const b=$("bubbles"); let h="";
+  for(let i=0;i<18;i++){ const x=255+Math.random()*240, y=222+Math.random()*12, r=(1.6+Math.random()*2.4).toFixed(1);
+    h+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r}" style="--d:${(2+Math.random()*1.8).toFixed(2)}s;--dl:${(-Math.random()*3).toFixed(2)}s"/>`; }
+  b.innerHTML=h;
+  if(REDUCE) svg.pauseAnimations();
+})();
+
+const FLOWS=[["all","Все потоки",""],["manure","Навоз","#C0955A"],["gas","Биогаз","#8EB2FF"],["power","Электричество","#F5C542"],["heat","Тепло","#F08A5D"],["digest","Удобрение","#8FCB7E"]];
+$("flowChips").innerHTML = FLOWS.map(([k,n,c])=>`<button type="button" class="chip" data-f="${k}" aria-pressed="${k==="all"}">${c?`<i style="background:${c}"></i>`:""}${n}</button>`).join("");
+$("flowChips").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
+  V3D.show=b.dataset.f;
+  $("flowChips").querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));
+}));
+
+const VILLAGE = {krs:400,sheep:1000,goats:100,horses:80,camels:0,pigs:0,poultry:0}, VSHARE=0.5;
+function renderVillage(){
+  const r=model(VILLAGE,VSHARE), ec=econ(r), homes=Math.floor(r.homes);
+  $("vNote").textContent="Пример: село, где держат 400 коров, 1 000 овец, 100 коз и 80 лошадей, и собирают половину навоза. Расчёт при текущих ценах калькулятора:";
+  const v=verdict(r,ec);
+  $("vStats").innerHTML=[
+    ["gas",nf(r.gasDay)+" м³","биогаза в сутки"],
+    ["power",nf(homes)+" "+plural(homes,"дом","дома","домов"),"обеспечит электричеством"],
+    ["heat",nf(r.heatGcal)+" Гкал","тепла в год"],
+    ["digest",fmtMass(r.fertT).replace("/год",""),"удобрения в год"],
+    [v.cls,v.big,"срок окупаемости"]
+  ].map(([c,b,s])=>`<div class="vs ${c}"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+$("villageToCalc").addEventListener("click",()=>{
+  heads=Object.assign({},VILLAGE); store.set("bg-heads2",heads); syncInputs();
+  share=VSHARE*100; store.set("bg-share",share); $("share").value=share; setHeatOwn(K.thOwn);
+  setFrom("Подставлен пример села из раздела «Как это работает».");
+  renderCalc(); openCalc();
+});
+
+buildCalc(); buildMap(); renderCalc(); renderMap(); renderCard(); renderRating(); renderVillage();
+window.matchMedia("(prefers-color-scheme:dark)").addEventListener?.("change",renderMap);
+new MutationObserver(renderMap).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+</script>
+</body>
+</html>
